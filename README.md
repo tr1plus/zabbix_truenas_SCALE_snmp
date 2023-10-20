@@ -9,7 +9,7 @@ As per the comment in this issue: [https://ixsystems.atlassian.net/browse/NAS-12
 
 I tried reaching out via the forum & reddit to get this resolved, but never got any support or interest in this. I decided to work on this for personal usage & hope to help someone else with this too.
 
-**NOTE:** I had to delete certain logic in this, since with the new SNMP data the pools no longer share data usage statistics (% used). I had to monitor this on datasets using some calculated fields. I have built a rule to only do this on the "root" datasets (so no sub datasets/folders) as my logic would only work for those based on the available fields in SNMP I could find.
+**NOTE:** I had to delete certain logic in this, since with the new SNMP data the pools no longer share data usage statistics. I had to monitor this on datasets using some calculated fields and the available data. I have built a rule to only do this on the "root" datasets (so no sub datasets/folders) as my logic would only work for those based on the available fields in SNMP I could find.
 
 ## Requirements
 Zabbix version: 6.0 and higher.
