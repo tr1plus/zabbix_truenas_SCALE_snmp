@@ -23,3 +23,6 @@ TrueNAS-SCALE-22.12.3.3
 - Import the template into Zabbix.
 - Enable SNMP daemon at Services in TrueNAS web interface: https://www.truenas.com/docs/core/uireference/services/snmpscreen/
 - Link the template to the host.
+
+### Additional macro
+- {$DATASET.ROOT} was added with default value `^(.+\/(.+))` to ensure only the root dataset would get marked for the item prototype.
