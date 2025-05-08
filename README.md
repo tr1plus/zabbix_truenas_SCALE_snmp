@@ -18,6 +18,7 @@ Zabbix version: 6.0 and higher.
 This template has been tested on:
 
 TrueNAS-SCALE-22.12.3.3
+  ARC changes were updated on TrueNAS-24.10.1 (and the rest also still works there)
 
 ## Setup
 - Import the template into Zabbix.
