@@ -21,7 +21,7 @@ Mid 2026 the community made me aware that truenas had been updated and was shipp
 - [x] Monitoring of a Dataset (Available space, Total space, Usage in %, Used space)
 - [x] Monitoring of a ZVOL (Available space, Used Space, Written space)
 
-![ZFS Monitoring](img\ZFS-Monitoring.png)
+![ZFS Monitoring](img/ZFS-Monitoring.png)
 
 ## Requirements
 Zabbix version: 7.4 and higher.
