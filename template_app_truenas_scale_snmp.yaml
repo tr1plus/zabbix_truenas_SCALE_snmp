@@ -1,13 +1,12 @@
 zabbix_export:
-  version: '6.0'
-  date: '2025-05-08T18:52:18Z'
-  groups:
+  version: '7.4'
+  template_groups:
     - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
       name: Templates/Applications
   templates:
     - uuid: 195629aaa9fb4909b22fc6ee6dc47489
-      template: 'TrueNAS SCALE 22.12.1 and up by SNMP'
-      name: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+      template: 'TrueNAS SCALE by SNMP'
+      name: 'TrueNAS SCALE by SNMP'
       description: |
         Template for monitoring TrueNAS by SNMP.
         
@@ -21,9 +20,10 @@ zabbix_export:
         SNMPv2-MIB
         UCD-DISKIO-MIB
         UCD-SNMP-MIB
-        FREENAS-MIB
+        TRUENAS-MIB (enterprises 50536, updated 2026-02-11)
         
         Based on the standard TrueNAS by SNMP template for Zabbix v6.0 LTS, but tweaked to work with later versions of TrueNAS SCALE. As explained here: https://ixsystems.atlassian.net/browse/NAS-120434 SNMP addresses changed a lot.
+        More recently they released a TRUENAS-MIB (updated 2026-02-11) which allowed me to finetune some additional metrics.
       groups:
         - name: Templates/Applications
       items:
@@ -45,7 +45,7 @@ zabbix_export:
               value: network
           triggers:
             - uuid: 9c437d8a7acf45e9a7b4601639d6595d
-              expression: 'max(/TrueNAS SCALE 22.12.1 and up by SNMP/icmpping,#3)=0'
+              expression: 'max(/TrueNAS SCALE by SNMP/icmpping,#3)=0'
               name: 'TrueNAS: Unavailable by ICMP ping'
               priority: HIGH
               description: 'Last three attempts returned timeout.  Please check device connectivity.'
@@ -67,14 +67,14 @@ zabbix_export:
               value: network
           triggers:
             - uuid: 2917b78fb02e414795d6847f6f67f6ed
-              expression: 'min(/TrueNAS SCALE 22.12.1 and up by SNMP/icmppingloss,5m)>{$ICMP_LOSS_WARN} and min(/TrueNAS SCALE 22.12.1 and up by SNMP/icmppingloss,5m)<100'
+              expression: 'min(/TrueNAS SCALE by SNMP/icmppingloss,5m)>{$ICMP_LOSS_WARN} and min(/TrueNAS SCALE by SNMP/icmppingloss,5m)<100'
               name: 'TrueNAS: High ICMP ping loss'
               opdata: 'Loss: {ITEM.LASTVALUE1}'
               priority: WARNING
               description: 'ICMP packets loss detected.'
               dependencies:
                 - name: 'TrueNAS: Unavailable by ICMP ping'
-                  expression: 'max(/TrueNAS SCALE 22.12.1 and up by SNMP/icmpping,#3)=0'
+                  expression: 'max(/TrueNAS SCALE by SNMP/icmpping,#3)=0'
               tags:
                 - tag: scope
                   value: availability
@@ -95,14 +95,14 @@ zabbix_export:
               value: network
           triggers:
             - uuid: 11b21ba2c9a64e848e760ac2aee31fc0
-              expression: 'avg(/TrueNAS SCALE 22.12.1 and up by SNMP/icmppingsec,5m)>{$ICMP_RESPONSE_TIME_WARN}'
+              expression: 'avg(/TrueNAS SCALE by SNMP/icmppingsec,5m)>{$ICMP_RESPONSE_TIME_WARN}'
               name: 'TrueNAS: High ICMP ping response time'
               opdata: 'Value: {ITEM.LASTVALUE1}'
               priority: WARNING
               description: 'Average ICMP response time is too big.'
               dependencies:
                 - name: 'TrueNAS: Unavailable by ICMP ping'
-                  expression: 'max(/TrueNAS SCALE 22.12.1 and up by SNMP/icmpping,#3)=0'
+                  expression: 'max(/TrueNAS SCALE by SNMP/icmpping,#3)=0'
               tags:
                 - tag: scope
                   value: availability
@@ -113,7 +113,6 @@ zabbix_export:
           type: SNMP_TRAP
           key: snmptrap.fallback
           history: 7d
-          trends: '0'
           value_type: LOG
           description: 'The item is used to collect all SNMP traps unmatched by other snmptrap items.'
           logtimefmt: 'hh:mm:sszyyyy/MM/dd'
@@ -127,7 +126,6 @@ zabbix_export:
           key: system.contact
           delay: 15m
           history: 7d
-          trends: '0'
           value_type: CHAR
           description: |
             MIB: SNMPv2-MIB
@@ -152,8 +150,6 @@ zabbix_export:
             Number of interrupts processed.
           preprocessing:
             - type: CHANGE_PER_SECOND
-              parameters:
-                - ''
           tags:
             - tag: component
               value: cpu
@@ -226,8 +222,6 @@ zabbix_export:
             Number of context switches.
           preprocessing:
             - type: CHANGE_PER_SECOND
-              parameters:
-                - ''
           tags:
             - tag: component
               value: cpu
@@ -238,7 +232,6 @@ zabbix_export:
           key: system.descr
           delay: 15m
           history: 7d
-          trends: '0'
           value_type: CHAR
           description: |
             MIB: SNMPv2-MIB
@@ -257,7 +250,6 @@ zabbix_export:
           key: system.location
           delay: 15m
           history: 7d
-          trends: '0'
           value_type: CHAR
           description: |
             MIB: SNMPv2-MIB
@@ -277,7 +269,6 @@ zabbix_export:
           key: system.name
           delay: 15m
           history: 7d
-          trends: '0'
           value_type: CHAR
           description: |
             MIB: SNMPv2-MIB
@@ -292,7 +283,7 @@ zabbix_export:
               value: system
           triggers:
             - uuid: 5b5c92abcbe04124b0c155bf161c1e91
-              expression: 'last(/TrueNAS SCALE 22.12.1 and up by SNMP/system.name,#1)<>last(/TrueNAS SCALE 22.12.1 and up by SNMP/system.name,#2) and length(last(/TrueNAS SCALE 22.12.1 and up by SNMP/system.name))>0'
+              expression: 'last(/TrueNAS SCALE by SNMP/system.name,#1)<>last(/TrueNAS SCALE by SNMP/system.name,#2) and length(last(/TrueNAS SCALE by SNMP/system.name))>0'
               name: 'TrueNAS: System name has changed'
               event_name: 'TrueNAS: System name has changed (new name: {ITEM.VALUE})'
               priority: INFO
@@ -310,7 +301,6 @@ zabbix_export:
           key: system.objectid
           delay: 15m
           history: 7d
-          trends: '0'
           value_type: CHAR
           description: |
             MIB: SNMPv2-MIB
@@ -353,7 +343,7 @@ zabbix_export:
           preprocessing:
             - type: CHECK_NOT_SUPPORTED
               parameters:
-                - ''
+                - '-1'
               error_handler: CUSTOM_VALUE
               error_handler_params: '100'
           tags:
@@ -401,7 +391,7 @@ zabbix_export:
               value: system
           triggers:
             - uuid: 91db2acdf9e4424280008f246496cd67
-              expression: 'last(/TrueNAS SCALE 22.12.1 and up by SNMP/system.uptime)<10m'
+              expression: 'last(/TrueNAS SCALE by SNMP/system.uptime)<10m'
               name: 'TrueNAS: Host has been restarted'
               event_name: 'TrueNAS: {HOST.NAME} has been restarted (uptime < 10m)'
               priority: INFO
@@ -479,8 +469,6 @@ zabbix_export:
             Total amount of cache hits in the ARC per second.
           preprocessing:
             - type: CHANGE_PER_SECOND
-              parameters:
-                - ''
           tags:
             - tag: component
               value: memory
@@ -514,8 +502,6 @@ zabbix_export:
             Total amount of cache misses in the ARC per second.
           preprocessing:
             - type: CHANGE_PER_SECOND
-              parameters:
-                - ''
           tags:
             - tag: component
               value: memory
@@ -550,13 +536,12 @@ zabbix_export:
           key: truenas.zfs.l2arc.hits
           history: 7d
           value_type: FLOAT
+          status: DISABLED
           description: |
             MIB: FREENAS-MIB
             Hits to the L2 cache per second.
           preprocessing:
             - type: CHANGE_PER_SECOND
-              parameters:
-                - ''
           tags:
             - tag: component
               value: memory
@@ -569,13 +554,12 @@ zabbix_export:
           key: truenas.zfs.l2arc.misses
           history: 7d
           value_type: FLOAT
+          status: DISABLED
           description: |
             MIB: FREENAS-MIB
             Misses to the L2 cache per second.
           preprocessing:
             - type: CHANGE_PER_SECOND
-              parameters:
-                - ''
           tags:
             - tag: component
               value: memory
@@ -588,14 +572,13 @@ zabbix_export:
           key: truenas.zfs.l2arc.read
           history: 7d
           value_type: FLOAT
+          status: DISABLED
           units: Bps
           description: |
             MIB: FREENAS-MIB
             Read rate from L2 cache in bytes per second.
           preprocessing:
             - type: CHANGE_PER_SECOND
-              parameters:
-                - ''
           tags:
             - tag: component
               value: memory
@@ -608,6 +591,7 @@ zabbix_export:
           key: truenas.zfs.l2arc.size
           history: 7d
           value_type: FLOAT
+          status: DISABLED
           units: B
           description: |
             MIB: FREENAS-MIB
@@ -631,14 +615,13 @@ zabbix_export:
           key: truenas.zfs.l2arc.write
           history: 7d
           value_type: FLOAT
+          status: DISABLED
           units: Bps
           description: |
             MIB: FREENAS-MIB
             Write rate from L2 cache in bytes per second.
           preprocessing:
             - type: CHANGE_PER_SECOND
-              parameters:
-                - ''
           tags:
             - tag: component
               value: memory
@@ -647,7 +630,7 @@ zabbix_export:
         - uuid: 150cf43146e945638d196d088202ad61
           name: 'TrueNAS: ZIL operations 1 second'
           type: SNMP_AGENT
-          snmp_oid: .1.3.6.1.4.1.50536.1.6.1.0
+          snmp_oid: .1.3.6.1.4.1.50536.1.4.1.0
           key: truenas.zfs.zil.ops1
           history: 7d
           value_type: FLOAT
@@ -662,7 +645,7 @@ zabbix_export:
         - uuid: 736c1c7bacd3487d8cbc01cde855bf7f
           name: 'TrueNAS: ZIL operations 5 seconds'
           type: SNMP_AGENT
-          snmp_oid: .1.3.6.1.4.1.50536.1.6.2.0
+          snmp_oid: .1.3.6.1.4.1.50536.1.4.2.0
           key: truenas.zfs.zil.ops5
           history: 7d
           value_type: FLOAT
@@ -677,7 +660,7 @@ zabbix_export:
         - uuid: 06ffdded5c3245f7808fe0b2831755ea
           name: 'TrueNAS: ZIL operations 10 seconds'
           type: SNMP_AGENT
-          snmp_oid: .1.3.6.1.4.1.50536.1.6.3.0
+          snmp_oid: .1.3.6.1.4.1.50536.1.4.3.0
           key: truenas.zfs.zil.ops10
           history: 7d
           value_type: FLOAT
@@ -782,14 +765,14 @@ zabbix_export:
               value: memory
           triggers:
             - uuid: 60f46f14c85a4a8ea3aead2bffba69ce
-              expression: 'min(/TrueNAS SCALE 22.12.1 and up by SNMP/vm.memory.util,5m)>{$MEMORY.UTIL.MAX}'
+              expression: 'min(/TrueNAS SCALE by SNMP/vm.memory.util,5m)>{$MEMORY.UTIL.MAX}'
               name: 'TrueNAS: High memory utilization'
               event_name: 'TrueNAS: High memory utilization (>{$MEMORY.UTIL.MAX}% for 5m)'
               priority: AVERAGE
               description: 'The system is running out of free memory.'
               dependencies:
                 - name: 'TrueNAS: Lack of available memory'
-                  expression: 'min(/TrueNAS SCALE 22.12.1 and up by SNMP/vm.memory.available,5m)<{$MEMORY.AVAILABLE.MIN} and last(/TrueNAS SCALE 22.12.1 and up by SNMP/vm.memory.total)>0'
+                  expression: 'min(/TrueNAS SCALE by SNMP/vm.memory.available,5m)<{$MEMORY.AVAILABLE.MIN} and last(/TrueNAS SCALE by SNMP/vm.memory.total)>0'
               tags:
                 - tag: scope
                   value: capacity
@@ -815,14 +798,14 @@ zabbix_export:
               value: network
           triggers:
             - uuid: 63eb4f3dfca042a794f8b88d6fa86932
-              expression: 'max(/TrueNAS SCALE 22.12.1 and up by SNMP/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0'
+              expression: 'max(/TrueNAS SCALE by SNMP/zabbix[host,snmp,available],{$SNMP.TIMEOUT})=0'
               name: 'TrueNAS: No SNMP data collection'
               opdata: 'Current state: {ITEM.LASTVALUE1}'
               priority: WARNING
               description: 'SNMP is not available for polling. Please check device connectivity and SNMP settings.'
               dependencies:
                 - name: 'TrueNAS: Unavailable by ICMP ping'
-                  expression: 'max(/TrueNAS SCALE 22.12.1 and up by SNMP/icmpping,#3)=0'
+                  expression: 'max(/TrueNAS SCALE by SNMP/icmpping,#3)=0'
               tags:
                 - tag: scope
                   value: availability
@@ -831,7 +814,8 @@ zabbix_export:
           name: 'CPU discovery'
           type: DEPENDENT
           key: cpu.discovery
-          delay: '0'
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
           description: 'This discovery will create set of per core CPU metrics from UCD-SNMP-MIB, using {#CPU.COUNT} in preprocessing. That''s the only reason why LLD is used.'
           item_prototypes:
             - uuid: 445ee017548747c29e1b6495084b4981
@@ -861,8 +845,6 @@ zabbix_export:
                 The amount of time the CPU has been servicing hardware interrupts.
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
                 - type: JAVASCRIPT
                   parameters:
                     - |
@@ -884,8 +866,6 @@ zabbix_export:
                 The amount of time the CPU has been waiting for I/O to complete.
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
                 - type: JAVASCRIPT
                   parameters:
                     - |
@@ -907,8 +887,6 @@ zabbix_export:
                 The time the CPU has spent running users' processes that have been niced.
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
                 - type: JAVASCRIPT
                   parameters:
                     - |
@@ -930,8 +908,6 @@ zabbix_export:
                 The time the CPU has spent running the kernel and its processes.
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
                 - type: JAVASCRIPT
                   parameters:
                     - |
@@ -953,8 +929,6 @@ zabbix_export:
                 The time the CPU has spent running users' processes that are not niced.
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
                 - type: JAVASCRIPT
                   parameters:
                     - |
@@ -967,7 +941,6 @@ zabbix_export:
               name: 'TrueNAS: CPU utilization'
               type: DEPENDENT
               key: 'system.cpu.util[{#SNMPINDEX}]'
-              delay: '0'
               history: 7d
               value_type: FLOAT
               units: '%'
@@ -985,7 +958,7 @@ zabbix_export:
                   value: cpu
               trigger_prototypes:
                 - uuid: 0b5a434e1a094576822d4ccc85abdbae
-                  expression: 'min(/TrueNAS SCALE 22.12.1 and up by SNMP/system.cpu.util[{#SNMPINDEX}],5m)>{$CPU.UTIL.CRIT}'
+                  expression: 'min(/TrueNAS SCALE by SNMP/system.cpu.util[{#SNMPINDEX}],5m)>{$CPU.UTIL.CRIT}'
                   name: 'TrueNAS: High CPU utilization'
                   event_name: 'TrueNAS: High CPU utilization (over {$CPU.UTIL.CRIT}% for 5m)'
                   opdata: 'Current utilization: {ITEM.LASTVALUE1}'
@@ -994,9 +967,9 @@ zabbix_export:
                   dependencies:
                     - name: 'TrueNAS: Load average is too high'
                       expression: |
-                        min(/TrueNAS SCALE 22.12.1 and up by SNMP/system.cpu.load.avg1,5m)/last(/TrueNAS SCALE 22.12.1 and up by SNMP/system.cpu.num)>{$LOAD_AVG_PER_CPU.MAX.WARN}
-                        and last(/TrueNAS SCALE 22.12.1 and up by SNMP/system.cpu.load.avg5)>0
-                        and last(/TrueNAS SCALE 22.12.1 and up by SNMP/system.cpu.load.avg15)>0
+                        min(/TrueNAS SCALE by SNMP/system.cpu.load.avg1,5m)/last(/TrueNAS SCALE by SNMP/system.cpu.num)>{$LOAD_AVG_PER_CPU.MAX.WARN}
+                        and last(/TrueNAS SCALE by SNMP/system.cpu.load.avg5)>0
+                        and last(/TrueNAS SCALE by SNMP/system.cpu.load.avg15)>0
                   tags:
                     - tag: scope
                       value: performance
@@ -1009,27 +982,27 @@ zabbix_export:
               graph_items:
                 - color: 199C0D
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'system.cpu.system[{#SNMPINDEX}]'
                 - sortorder: '1'
                   color: F63100
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'system.cpu.user[{#SNMPINDEX}]'
                 - sortorder: '2'
                   color: 00611C
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'system.cpu.nice[{#SNMPINDEX}]'
                 - sortorder: '3'
                   color: F7941D
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'system.cpu.iowait[{#SNMPINDEX}]'
                 - sortorder: '4'
                   color: FC6EA3
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'system.cpu.interrupt[{#SNMPINDEX}]'
             - uuid: 7d02bb6234f44629b17af1024b0266c2
               name: 'TrueNAS: CPU utilization{#SINGLETON}'
@@ -1039,7 +1012,7 @@ zabbix_export:
                 - drawtype: GRADIENT_LINE
                   color: 199C0D
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'system.cpu.util[{#SNMPINDEX}]'
           master_item:
             key: system.cpu.num
@@ -1060,46 +1033,36 @@ zabbix_export:
             conditions:
               - macro: '{#IFADMINSTATUS}'
                 value: '{$NET.IF.IFADMINSTATUS.MATCHES}'
-                formulaid: A
               - macro: '{#IFADMINSTATUS}'
                 value: '{$NET.IF.IFADMINSTATUS.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
-                formulaid: B
               - macro: '{#IFALIAS}'
                 value: '{$NET.IF.IFALIAS.MATCHES}'
-                formulaid: C
               - macro: '{#IFALIAS}'
                 value: '{$NET.IF.IFALIAS.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
-                formulaid: D
               - macro: '{#IFDESCR}'
                 value: '{$NET.IF.IFDESCR.MATCHES}'
-                formulaid: E
               - macro: '{#IFDESCR}'
                 value: '{$NET.IF.IFDESCR.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
-                formulaid: F
               - macro: '{#IFNAME}'
                 value: '@Network interfaces for discovery'
-                formulaid: G
               - macro: '{#IFNAME}'
                 value: '{$NET.IF.IFNAME.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
-                formulaid: H
               - macro: '{#IFOPERSTATUS}'
                 value: '{$NET.IF.IFOPERSTATUS.MATCHES}'
-                formulaid: I
               - macro: '{#IFOPERSTATUS}'
                 value: '{$NET.IF.IFOPERSTATUS.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
-                formulaid: J
               - macro: '{#IFTYPE}'
                 value: '{$NET.IF.IFTYPE.MATCHES}'
-                formulaid: K
               - macro: '{#IFTYPE}'
                 value: '{$NET.IF.IFTYPE.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
-                formulaid: L
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
           description: 'Discovering interfaces from IF-MIB.'
           item_prototypes:
             - uuid: 1fb8706e90fd4c59a35825adfee93a20
@@ -1117,8 +1080,6 @@ zabbix_export:
                 and at other times as indicated by the value of ifCounterDiscontinuityTime.
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
               tags:
                 - tag: component
                   value: network
@@ -1137,8 +1098,6 @@ zabbix_export:
                 For packet-oriented interfaces, the number of inbound packets that contained errors preventing them from being deliverable to a higher-layer protocol.  For character-oriented or fixed-length interfaces, the number of inbound transmission units that contained errors preventing them from being deliverable to a higher-layer protocol. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
               tags:
                 - tag: component
                   value: network
@@ -1148,9 +1107,9 @@ zabbix_export:
                   value: '{#IFNAME}'
               trigger_prototypes:
                 - uuid: 7ad004556d804ecdbc1e60cb425d8d74
-                  expression: 'min(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.in.errors[{#SNMPINDEX}],5m)>{$IF.ERRORS.WARN:"{#IFNAME}"}'
+                  expression: 'min(/TrueNAS SCALE by SNMP/net.if.in.errors[{#SNMPINDEX}],5m)>{$IF.ERRORS.WARN:"{#IFNAME}"}'
                   recovery_mode: RECOVERY_EXPRESSION
-                  recovery_expression: 'max(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.in.errors[{#SNMPINDEX}],5m)<{$IF.ERRORS.WARN:"{#IFNAME}"}*0.8'
+                  recovery_expression: 'max(/TrueNAS SCALE by SNMP/net.if.in.errors[{#SNMPINDEX}],5m)<{$IF.ERRORS.WARN:"{#IFNAME}"}*0.8'
                   name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: High input error rate'
                   event_name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: High input error rate ( > {$IF.ERRORS.WARN:"{#IFNAME}"} for 5m)'
                   opdata: 'errors in: {ITEM.LASTVALUE1}'
@@ -1158,7 +1117,7 @@ zabbix_export:
                   description: 'It recovers when it is below 80% of the `{$IF.ERRORS.WARN:"{#IFNAME}"}` threshold.'
                   dependencies:
                     - name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: Link down'
-                      expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.status[{#SNMPINDEX}])=2)'
+                      expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/TrueNAS SCALE by SNMP/net.if.status[{#SNMPINDEX}])=2)'
                   tags:
                     - tag: scope
                       value: availability
@@ -1174,8 +1133,6 @@ zabbix_export:
                 The total number of octets received on the interface, including framing characters. This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
                 - type: MULTIPLIER
                   parameters:
                     - '8'
@@ -1201,8 +1158,6 @@ zabbix_export:
                 and at other times as indicated by the value of ifCounterDiscontinuityTime.
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
               tags:
                 - tag: component
                   value: network
@@ -1221,8 +1176,6 @@ zabbix_export:
                 For packet-oriented interfaces, the number of outbound packets that contained errors preventing them from being deliverable to a higher-layer protocol.  For character-oriented or fixed-length interfaces, the number of outbound transmission units that contained errors preventing them from being deliverable to a higher-layer protocol. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
               tags:
                 - tag: component
                   value: network
@@ -1232,9 +1185,9 @@ zabbix_export:
                   value: '{#IFNAME}'
               trigger_prototypes:
                 - uuid: 00f16c98d4144d62afb432fe1f28fcb0
-                  expression: 'min(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.out.errors[{#SNMPINDEX}],5m)>{$IF.ERRORS.WARN:"{#IFNAME}"}'
+                  expression: 'min(/TrueNAS SCALE by SNMP/net.if.out.errors[{#SNMPINDEX}],5m)>{$IF.ERRORS.WARN:"{#IFNAME}"}'
                   recovery_mode: RECOVERY_EXPRESSION
-                  recovery_expression: 'max(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.out.errors[{#SNMPINDEX}],5m)<{$IF.ERRORS.WARN:"{#IFNAME}"}*0.8'
+                  recovery_expression: 'max(/TrueNAS SCALE by SNMP/net.if.out.errors[{#SNMPINDEX}],5m)<{$IF.ERRORS.WARN:"{#IFNAME}"}*0.8'
                   name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: High output error rate'
                   event_name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: High output error rate ( > {$IF.ERRORS.WARN:"{#IFNAME}"} for 5m)'
                   opdata: 'errors out: {ITEM.LASTVALUE2}'
@@ -1242,7 +1195,7 @@ zabbix_export:
                   description: 'It recovers when it is below 80% of the `{$IF.ERRORS.WARN:"{#IFNAME}"}` threshold.'
                   dependencies:
                     - name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: Link down'
-                      expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.status[{#SNMPINDEX}])=2)'
+                      expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/TrueNAS SCALE by SNMP/net.if.status[{#SNMPINDEX}])=2)'
                   tags:
                     - tag: scope
                       value: availability
@@ -1258,8 +1211,6 @@ zabbix_export:
                 The total number of octets transmitted out of the interface, including framing characters. This object is a 64-bit version of ifOutOctets.Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
                 - type: MULTIPLIER
                   parameters:
                     - '8'
@@ -1324,7 +1275,7 @@ zabbix_export:
                   value: '{#IFNAME}'
               trigger_prototypes:
                 - uuid: b9e79ff4aab64154bbdd358191daf622
-                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.status[{#SNMPINDEX}])=2)'
+                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/TrueNAS SCALE by SNMP/net.if.status[{#SNMPINDEX}])=2)'
                   name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: Link down'
                   opdata: 'Current state: {ITEM.LASTVALUE1}'
                   priority: AVERAGE
@@ -1362,37 +1313,37 @@ zabbix_export:
           trigger_prototypes:
             - uuid: 35c9dd57fd144a17a7b73876d462151d
               expression: |
-                change(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.speed[{#SNMPINDEX}])<0 and last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.speed[{#SNMPINDEX}])>0
+                change(/TrueNAS SCALE by SNMP/net.if.speed[{#SNMPINDEX}])<0 and last(/TrueNAS SCALE by SNMP/net.if.speed[{#SNMPINDEX}])>0
                 and (
-                last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.type[{#SNMPINDEX}])=6 or
-                last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.type[{#SNMPINDEX}])=7 or
-                last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.type[{#SNMPINDEX}])=11 or
-                last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.type[{#SNMPINDEX}])=62 or
-                last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.type[{#SNMPINDEX}])=69 or
-                last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.type[{#SNMPINDEX}])=117
+                last(/TrueNAS SCALE by SNMP/net.if.type[{#SNMPINDEX}])=6 or
+                last(/TrueNAS SCALE by SNMP/net.if.type[{#SNMPINDEX}])=7 or
+                last(/TrueNAS SCALE by SNMP/net.if.type[{#SNMPINDEX}])=11 or
+                last(/TrueNAS SCALE by SNMP/net.if.type[{#SNMPINDEX}])=62 or
+                last(/TrueNAS SCALE by SNMP/net.if.type[{#SNMPINDEX}])=69 or
+                last(/TrueNAS SCALE by SNMP/net.if.type[{#SNMPINDEX}])=117
                 )
                 and
-                (last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.status[{#SNMPINDEX}])<>2)
+                (last(/TrueNAS SCALE by SNMP/net.if.status[{#SNMPINDEX}])<>2)
               recovery_mode: RECOVERY_EXPRESSION
               recovery_expression: |
-                (change(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.speed[{#SNMPINDEX}])>0 and last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.speed[{#SNMPINDEX}],#2)>0) or
-                (last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.status[{#SNMPINDEX}])=2)
+                (change(/TrueNAS SCALE by SNMP/net.if.speed[{#SNMPINDEX}])>0 and last(/TrueNAS SCALE by SNMP/net.if.speed[{#SNMPINDEX}],#2)>0) or
+                (last(/TrueNAS SCALE by SNMP/net.if.status[{#SNMPINDEX}])=2)
               name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: Ethernet has changed to lower speed than it was before'
               opdata: 'Current reported speed: {ITEM.LASTVALUE1}'
               priority: INFO
               description: 'This Ethernet connection has transitioned down from its known maximum speed. This might be a sign of autonegotiation issues. Acknowledge to close the problem manually.'
               dependencies:
                 - name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: Link down'
-                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.status[{#SNMPINDEX}])=2)'
+                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/TrueNAS SCALE by SNMP/net.if.status[{#SNMPINDEX}])=2)'
               tags:
                 - tag: scope
                   value: capacity
             - uuid: 8305704221a347bd983b1817369eb84f
               expression: |
-                (avg(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.in[{#SNMPINDEX}],15m)>({$IF.UTIL.MAX:"{#IFNAME}"}/100)*last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.speed[{#SNMPINDEX}])) and
-                last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.speed[{#SNMPINDEX}])>0
+                (avg(/TrueNAS SCALE by SNMP/net.if.in[{#SNMPINDEX}],15m)>({$IF.UTIL.MAX:"{#IFNAME}"}/100)*last(/TrueNAS SCALE by SNMP/net.if.speed[{#SNMPINDEX}])) and
+                last(/TrueNAS SCALE by SNMP/net.if.speed[{#SNMPINDEX}])>0
               recovery_mode: RECOVERY_EXPRESSION
-              recovery_expression: 'avg(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.in[{#SNMPINDEX}],15m)<(({$IF.UTIL.MAX:"{#IFNAME}"}-3)/100)*last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.speed[{#SNMPINDEX}])'
+              recovery_expression: 'avg(/TrueNAS SCALE by SNMP/net.if.in[{#SNMPINDEX}],15m)<(({$IF.UTIL.MAX:"{#IFNAME}"}-3)/100)*last(/TrueNAS SCALE by SNMP/net.if.speed[{#SNMPINDEX}])'
               name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: High inbound bandwidth usage'
               event_name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: High inbound bandwidth usage ( > {$IF.UTIL.MAX:"{#IFNAME}"}% )'
               opdata: 'In: {ITEM.LASTVALUE1}, speed: {ITEM.LASTVALUE2}'
@@ -1400,16 +1351,16 @@ zabbix_export:
               description: 'The utilization of the network interface is close to its estimated maximum bandwidth.'
               dependencies:
                 - name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: Link down'
-                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.status[{#SNMPINDEX}])=2)'
+                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/TrueNAS SCALE by SNMP/net.if.status[{#SNMPINDEX}])=2)'
               tags:
                 - tag: scope
                   value: performance
             - uuid: 8013c497e3804d6590259d3dae4ccae9
               expression: |
-                (avg(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.out[{#SNMPINDEX}],15m)>({$IF.UTIL.MAX:"{#IFNAME}"}/100)*last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.speed[{#SNMPINDEX}])) and
-                last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.speed[{#SNMPINDEX}])>0
+                (avg(/TrueNAS SCALE by SNMP/net.if.out[{#SNMPINDEX}],15m)>({$IF.UTIL.MAX:"{#IFNAME}"}/100)*last(/TrueNAS SCALE by SNMP/net.if.speed[{#SNMPINDEX}])) and
+                last(/TrueNAS SCALE by SNMP/net.if.speed[{#SNMPINDEX}])>0
               recovery_mode: RECOVERY_EXPRESSION
-              recovery_expression: 'avg(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.out[{#SNMPINDEX}],15m)<(({$IF.UTIL.MAX:"{#IFNAME}"}-3)/100)*last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.speed[{#SNMPINDEX}])'
+              recovery_expression: 'avg(/TrueNAS SCALE by SNMP/net.if.out[{#SNMPINDEX}],15m)<(({$IF.UTIL.MAX:"{#IFNAME}"}-3)/100)*last(/TrueNAS SCALE by SNMP/net.if.speed[{#SNMPINDEX}])'
               name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: High outbound bandwidth usage'
               event_name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: High outbound bandwidth usage ( > {$IF.UTIL.MAX:"{#IFNAME}"}% )'
               opdata: 'Out: {ITEM.LASTVALUE1}, speed: {ITEM.LASTVALUE2}'
@@ -1417,7 +1368,7 @@ zabbix_export:
               description: 'The utilization of the network interface is close to its estimated maximum bandwidth.'
               dependencies:
                 - name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: Link down'
-                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/TrueNAS SCALE 22.12.1 and up by SNMP/net.if.status[{#SNMPINDEX}])=2)'
+                  expression: '{$IFCONTROL:"{#IFNAME}"}=1 and (last(/TrueNAS SCALE by SNMP/net.if.status[{#SNMPINDEX}])=2)'
               tags:
                 - tag: scope
                   value: performance
@@ -1428,37 +1379,37 @@ zabbix_export:
                 - drawtype: GRADIENT_LINE
                   color: 1A7C11
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'net.if.in[{#SNMPINDEX}]'
                 - sortorder: '1'
                   drawtype: BOLD_LINE
                   color: 2774A4
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'net.if.out[{#SNMPINDEX}]'
                 - sortorder: '2'
                   color: F63100
                   yaxisside: RIGHT
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'net.if.out.errors[{#SNMPINDEX}]'
                 - sortorder: '3'
                   color: A54F10
                   yaxisside: RIGHT
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'net.if.in.errors[{#SNMPINDEX}]'
                 - sortorder: '4'
                   color: FC6EA3
                   yaxisside: RIGHT
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'net.if.out.discards[{#SNMPINDEX}]'
                 - sortorder: '5'
                   color: 6C59DC
                   yaxisside: RIGHT
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'net.if.in.discards[{#SNMPINDEX}]'
         - uuid: ad6ee65347054ddd8b0fefb39ac4dbf2
           name: 'Disks temperature discovery'
@@ -1466,6 +1417,8 @@ zabbix_export:
           snmp_oid: 'discovery[{#DISK_NAME},.1.3.6.1.4.1.50536.3.1.2]'
           key: truenas.disk.temp.discovery
           delay: 1h
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
           description: 'Disks temperature discovery from FREENAS-MIB.'
           item_prototypes:
             - uuid: fb7256703e744217bd804cc06919353b
@@ -1493,7 +1446,7 @@ zabbix_export:
                   value: '{#DISK_NAME}'
               trigger_prototypes:
                 - uuid: f7d6a119b2fa41d59c983347e828c59d
-                  expression: 'avg(/TrueNAS SCALE 22.12.1 and up by SNMP/truenas.disk.temp[{#DISK_NAME}],5m) > {$TEMPERATURE.MAX.CRIT:"{#DISK_NAME}"}'
+                  expression: 'avg(/TrueNAS SCALE by SNMP/truenas.disk.temp[{#DISK_NAME}],5m) > {$TEMPERATURE.MAX.CRIT:"{#DISK_NAME}"}'
                   name: 'TrueNAS: Disk [{#DISK_NAME}]: Average disk temperature is too high'
                   event_name: 'TrueNAS: Disk [{#DISK_NAME}]: Average disk temperature is too high (over {$TEMPERATURE.MAX.CRIT:"{#DISK_NAME}"}C for 5m)'
                   opdata: 'Current value: {ITEM.LASTVALUE1}'
@@ -1503,7 +1456,7 @@ zabbix_export:
                     - tag: scope
                       value: notice
                 - uuid: 1c04ce7f32674ec4b359720148c36c58
-                  expression: 'avg(/TrueNAS SCALE 22.12.1 and up by SNMP/truenas.disk.temp[{#DISK_NAME}],5m) > {$TEMPERATURE.MAX.WARN:"{#DISK_NAME}"}'
+                  expression: 'avg(/TrueNAS SCALE by SNMP/truenas.disk.temp[{#DISK_NAME}],5m) > {$TEMPERATURE.MAX.WARN:"{#DISK_NAME}"}'
                   name: 'TrueNAS: Disk [{#DISK_NAME}]: Average disk temperature is too high'
                   event_name: 'TrueNAS: Disk [{#DISK_NAME}]: Average disk temperature is too high (over {$TEMPERATURE.MAX.WARN:"{#DISK_NAME}"}C for 5m)'
                   opdata: 'Current value: {ITEM.LASTVALUE1}'
@@ -1518,7 +1471,7 @@ zabbix_export:
               graph_items:
                 - color: 199C0D
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'truenas.disk.temp[{#DISK_NAME}]'
           preprocessing:
             - type: DISCARD_UNCHANGED_HEARTBEAT
@@ -1527,7 +1480,7 @@ zabbix_export:
         - uuid: 4e4d29c99410495dbebdd75abbb85c36
           name: 'ZFS datasets discovery'
           type: SNMP_AGENT
-          snmp_oid: 'discovery[{#DATASET_NAME},.1.3.6.1.4.1.50536.1.2.1.1.2]'
+          snmp_oid: 'discovery[{#DATASET_NAME},.1.3.6.1.4.1.50536.1.6.1.1.2]'
           key: truenas.zfs.dataset.discovery
           delay: 1h
           filter:
@@ -1535,17 +1488,17 @@ zabbix_export:
             conditions:
               - macro: '{#DATASET_NAME}'
                 value: '{$DATASET.NAME.MATCHES}'
-                formulaid: A
               - macro: '{#DATASET_NAME}'
                 value: '{$DATASET.NAME.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
-                formulaid: B
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
           description: 'ZFS datasets discovery from FREENAS-MIB.'
           item_prototypes:
             - uuid: 2507ddcc2cb143e7b473fd8e4dc7e002
               name: 'TrueNAS: Dataset [{#DATASET_NAME}]: Available space'
               type: SNMP_AGENT
-              snmp_oid: '.1.3.6.1.4.1.50536.1.2.1.1.4.{#SNMPINDEX}'
+              snmp_oid: '.1.3.6.1.4.1.50536.1.6.1.1.4.{#SNMPINDEX}'
               key: 'truenas.dataset.avail[{#DATASET_NAME}]'
               history: 7d
               units: B
@@ -1588,7 +1541,7 @@ zabbix_export:
             - uuid: 142b9468adb843f6a37e63ce18fc64d9
               name: 'TrueNAS: Dataset [{#DATASET_NAME}]: Used space'
               type: SNMP_AGENT
-              snmp_oid: '.1.3.6.1.4.1.50536.1.2.1.1.3.{#SNMPINDEX}'
+              snmp_oid: '.1.3.6.1.4.1.50536.1.6.1.1.3.{#SNMPINDEX}'
               key: 'truenas.dataset.used[{#DATASET_NAME}]'
               history: 7d
               units: B
@@ -1602,7 +1555,7 @@ zabbix_export:
                   value: '{#DATASET_NAME}'
           trigger_prototypes:
             - uuid: bf4403d221734d8ba8b7f897b1c16e2b
-              expression: 'min(/TrueNAS SCALE 22.12.1 and up by SNMP/truenas.dataset.pused[{#DATASET_NAME}],5m) > {$DATASET.PUSED.MAX.WARN:"{#DATASET_NAME}"} and last(/TrueNAS SCALE 22.12.1 and up by SNMP/truenas.dataset.avail[{#DATASET_NAME}]) < {$DATASET.FREE.MIN.WARN:"{#POOLNAME}"}'
+              expression: 'min(/TrueNAS SCALE by SNMP/truenas.dataset.pused[{#DATASET_NAME}],5m) > {$DATASET.PUSED.MAX.WARN:"{#DATASET_NAME}"} and last(/TrueNAS SCALE by SNMP/truenas.dataset.avail[{#DATASET_NAME}]) < {$DATASET.FREE.MIN.WARN:"{#POOLNAME}"}'
               name: 'TrueNAS: Dataset [{#DATASET_NAME}]: High space usage'
               event_name: 'TrueNAS: Dataset [{#DATASET_NAME}]: High space usage (more than {$DATASET.PUSED.MAX.WARN:"{#DATASET_NAME}"}% used)'
               opdata: 'Current usage: {ITEM.LASTVALUE1}'
@@ -1613,14 +1566,14 @@ zabbix_export:
                 2. The second condition - the dataset free space is less than `{$DATASET.FREE.MIN.WARN:"{#POOLNAME}"}`.
               dependencies:
                 - name: 'TrueNAS: Dataset [{#DATASET_NAME}]: Very high space usage'
-                  expression: 'min(/TrueNAS SCALE 22.12.1 and up by SNMP/truenas.dataset.pused[{#DATASET_NAME}],5m) > {$DATASET.PUSED.MAX.CRIT:"{#DATASET_NAME}"} and last(/TrueNAS SCALE 22.12.1 and up by SNMP/truenas.dataset.avail[{#DATASET_NAME}]) < {$DATASET.FREE.MIN.CRIT:"{#POOLNAME}"}'
+                  expression: 'min(/TrueNAS SCALE by SNMP/truenas.dataset.pused[{#DATASET_NAME}],5m) > {$DATASET.PUSED.MAX.CRIT:"{#DATASET_NAME}"} and last(/TrueNAS SCALE by SNMP/truenas.dataset.avail[{#DATASET_NAME}]) < {$DATASET.FREE.MIN.CRIT:"{#POOLNAME}"}'
               tags:
                 - tag: scope
                   value: capacity
                 - tag: scope
                   value: performance
             - uuid: 89e113d98e5b41c2b610c7fe6efc13de
-              expression: 'min(/TrueNAS SCALE 22.12.1 and up by SNMP/truenas.dataset.pused[{#DATASET_NAME}],5m) > {$DATASET.PUSED.MAX.CRIT:"{#DATASET_NAME}"} and last(/TrueNAS SCALE 22.12.1 and up by SNMP/truenas.dataset.avail[{#DATASET_NAME}]) < {$DATASET.FREE.MIN.CRIT:"{#POOLNAME}"}'
+              expression: 'min(/TrueNAS SCALE by SNMP/truenas.dataset.pused[{#DATASET_NAME}],5m) > {$DATASET.PUSED.MAX.CRIT:"{#DATASET_NAME}"} and last(/TrueNAS SCALE by SNMP/truenas.dataset.avail[{#DATASET_NAME}]) < {$DATASET.FREE.MIN.CRIT:"{#POOLNAME}"}'
               name: 'TrueNAS: Dataset [{#DATASET_NAME}]: Very high space usage'
               event_name: 'TrueNAS: Dataset [{#DATASET_NAME}]: Very high space usage (more than {$DATASET.PUSED.MAX.CRIT:"{#DATASET_NAME}"}% used)'
               opdata: 'Current usage: {ITEM.LASTVALUE1}'
@@ -1646,13 +1599,13 @@ zabbix_export:
                   calc_fnc: LAST
                   type: GRAPH_SUM
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'truenas.dataset.size.total[{#DATASET_NAME}]'
                 - sortorder: '1'
                   color: C80000
                   calc_fnc: LAST
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'truenas.dataset.used[{#DATASET_NAME}]'
           preprocessing:
             - type: DISCARD_UNCHANGED_HEARTBEAT
@@ -1665,19 +1618,19 @@ zabbix_export:
                 conditions:
                   - macro: '{#DATASET_NAME}'
                     value: '{$DATASET.ROOT}'
-                    formulaid: A
               operations:
-                - operationobject: ITEM_PROTOTYPE
-                  operator: NOT_LIKE
+                - operator: NOT_LIKE
                   value: 'Used space'
-                  status: DISABLED
                   discover: NO_DISCOVER
+                  status: DISABLED
         - uuid: be71fd8c7dbd43a08b9d38e5139db540
           name: 'ZFS pools discovery'
           type: SNMP_AGENT
           snmp_oid: 'discovery[{#POOLNAME},.1.3.6.1.4.1.50536.1.1.1.1.2]'
           key: truenas.zfs.pools.discovery
           delay: 1h
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
           description: 'ZFS pools discovery from FREENAS-MIB.'
           item_prototypes:
             - uuid: 19ea6a946123425dad68cc268b6f5d2e
@@ -1686,7 +1639,6 @@ zabbix_export:
               snmp_oid: '.1.3.6.1.4.1.50536.1.1.1.1.3.{#SNMPINDEX}'
               key: 'truenas.zpool.health[{#POOLNAME}]'
               history: 7d
-              trends: '0'
               value_type: CHAR
               description: |
                 MIB: FREENAS-MIB
@@ -1704,7 +1656,7 @@ zabbix_export:
                   value: '{#POOLNAME}'
               trigger_prototypes:
                 - uuid: 29bdd2cae71c4d1ba5577c9193bd754d
-                  expression: 'last(/TrueNAS SCALE 22.12.1 and up by SNMP/truenas.zpool.health[{#POOLNAME}]) <> "ONLINE"'
+                  expression: 'last(/TrueNAS SCALE by SNMP/truenas.zpool.health[{#POOLNAME}]) <> "ONLINE"'
                   name: 'TrueNAS: Pool [{#POOLNAME}]: Status is not online'
                   opdata: 'Current state: {ITEM.LASTVALUE1}'
                   priority: AVERAGE
@@ -1725,8 +1677,6 @@ zabbix_export:
                 The bandwidth of all read operations (including metadata), expressed as units per second (averaged since system booted).
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
               tags:
                 - tag: component
                   value: storage
@@ -1745,8 +1695,6 @@ zabbix_export:
                 The number of read I/O operations sent to the pool or device, including metadata requests (averaged since system booted).
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
               tags:
                 - tag: component
                   value: storage
@@ -1765,8 +1713,6 @@ zabbix_export:
                 The bandwidth of all write operations, expressed as units per second (averaged since system booted).
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
               tags:
                 - tag: component
                   value: storage
@@ -1785,8 +1731,6 @@ zabbix_export:
                 The number of write I/O operations sent to the pool or device (averaged since system booted).
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
               tags:
                 - tag: component
                   value: storage
@@ -1798,13 +1742,13 @@ zabbix_export:
               graph_items:
                 - color: 199C0D
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'truenas.zpool.read.bytes[{#POOLNAME}]'
                 - sortorder: '1'
                   drawtype: GRADIENT_LINE
                   color: F63100
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'truenas.zpool.write.bytes[{#POOLNAME}]'
           preprocessing:
             - type: DISCARD_UNCHANGED_HEARTBEAT
@@ -1813,47 +1757,23 @@ zabbix_export:
         - uuid: 38f61e9d4bef4d8381c010590950c040
           name: 'ZFS volumes discovery'
           type: SNMP_AGENT
-          snmp_oid: 'discovery[{#ZVOL_NAME},.1.3.6.1.4.1.50536.1.3.1.1.2,{#ZVOL_ALLOC_UNITS},.1.3.6.1.4.1.50536.1.3.1.1.3]'
+          snmp_oid: 'discovery[{#ZVOL_NAME},.1.3.6.1.4.1.50536.1.2.1.1.2,{#ZVOL_ALLOC_UNITS},.1.3.6.1.4.1.50536.1.2.1.1.3]'
           key: truenas.zfs.zvols.discovery
           delay: 1h
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
           description: 'ZFS volumes discovery from FREENAS-MIB.'
           item_prototypes:
             - uuid: 9c3507ab4a114dd4bd08e31a268663fa
               name: 'TrueNAS: ZFS volume [{#ZVOL_NAME}]: Available space'
               type: SNMP_AGENT
-              snmp_oid: '.1.3.6.1.4.1.50536.1.3.1.1.6.{#SNMPINDEX}'
+              snmp_oid: '.1.3.6.1.4.1.50536.1.2.1.1.4.{#SNMPINDEX}'
               key: 'truenas.zvol.avail[{#ZVOL_NAME}]'
               history: 7d
               units: B
               description: |
                 MIB: FREENAS-MIB
                 The available of the ZFS volume in bytes.
-              preprocessing:
-                - type: MULTIPLIER
-                  parameters:
-                    - '{#ZVOL_ALLOC_UNITS}'
-              tags:
-                - tag: component
-                  value: storage
-                - tag: volume
-                  value: '{#ZVOL_NAME}'
-            - uuid: e37c565aeda54b4dae93f1cd557e7d6b
-              name: 'TrueNAS: ZFS volume [{#ZVOL_NAME}]: Total space'
-              type: SNMP_AGENT
-              snmp_oid: '.1.3.6.1.4.1.50536.1.3.1.1.4.{#SNMPINDEX}'
-              key: 'truenas.zvol.size.total[{#ZVOL_NAME}]'
-              history: 7d
-              units: B
-              description: |
-                MIB: FREENAS-MIB
-                The size of the ZFS volume in bytes.
-              preprocessing:
-                - type: MULTIPLIER
-                  parameters:
-                    - '{#ZVOL_ALLOC_UNITS}'
-                - type: DISCARD_UNCHANGED_HEARTBEAT
-                  parameters:
-                    - 1h
               tags:
                 - tag: component
                   value: storage
@@ -1862,17 +1782,28 @@ zabbix_export:
             - uuid: b22b173b9fa942a1bb4ca1d874183c17
               name: 'TrueNAS: ZFS volume [{#ZVOL_NAME}]: Used space'
               type: SNMP_AGENT
-              snmp_oid: '.1.3.6.1.4.1.50536.1.3.1.1.5.{#SNMPINDEX}'
+              snmp_oid: '.1.3.6.1.4.1.50536.1.2.1.1.3.{#SNMPINDEX}'
               key: 'truenas.zvol.used[{#ZVOL_NAME}]'
               history: 7d
               units: B
               description: |
                 MIB: FREENAS-MIB
                 The used size of the ZFS volume in bytes.
-              preprocessing:
-                - type: MULTIPLIER
-                  parameters:
-                    - '{#ZVOL_ALLOC_UNITS}'
+              tags:
+                - tag: component
+                  value: storage
+                - tag: volume
+                  value: '{#ZVOL_NAME}'
+            - uuid: 9f9d94f5376042fbaa75b335b99a7779
+              name: 'TrueNAS: ZFS volume [{#ZVOL_NAME}]: Written space'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.50536.1.2.1.1.5.{#SNMPINDEX}'
+              key: 'truenas.zvol.written[{#ZVOL_NAME}]'
+              history: 7d
+              units: B
+              description: |
+                MIB: FREENAS-MIB
+                The used size of the ZFS volume in bytes.
               tags:
                 - tag: component
                   value: storage
@@ -1886,17 +1817,11 @@ zabbix_export:
               type: PIE
               show_3d: 'YES'
               graph_items:
-                - color: '969696'
-                  calc_fnc: LAST
-                  type: GRAPH_SUM
-                  item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
-                    key: 'truenas.zvol.size.total[{#ZVOL_NAME}]'
                 - sortorder: '1'
                   color: C80000
                   calc_fnc: LAST
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'truenas.zvol.used[{#ZVOL_NAME}]'
           preprocessing:
             - type: DISCARD_UNCHANGED_HEARTBEAT
@@ -1913,11 +1838,11 @@ zabbix_export:
             conditions:
               - macro: '{#DEVNAME}'
                 value: '{$VFS.DEV.DEVNAME.MATCHES}'
-                formulaid: A
               - macro: '{#DEVNAME}'
                 value: '{$VFS.DEV.DEVNAME.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
-                formulaid: B
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
           description: 'Block devices are discovered from UCD-DISKIO-MIB::diskIOTable (http://net-snmp.sourceforge.net/docs/mibs/ucdDiskIOMIB.html#diskIOTable).'
           item_prototypes:
             - uuid: 89d52fb0794a4ea682d30658ed11ffea
@@ -1933,8 +1858,6 @@ zabbix_export:
                 The number of read accesses from this device since boot.
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
               tags:
                 - tag: component
                   value: storage
@@ -1969,8 +1892,6 @@ zabbix_export:
                 The number of write accesses from this device since boot.
               preprocessing:
                 - type: CHANGE_PER_SECOND
-                  parameters:
-                    - ''
               tags:
                 - tag: component
                   value: storage
@@ -1982,13 +1903,13 @@ zabbix_export:
               graph_items:
                 - color: 199C0D
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'vfs.dev.read.rate[{#SNMPINDEX}]'
                 - sortorder: '1'
                   drawtype: GRADIENT_LINE
                   color: F63100
                   item:
-                    host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                    host: 'TrueNAS SCALE by SNMP'
                     key: 'vfs.dev.write.rate[{#SNMPINDEX}]'
       tags:
         - tag: class
@@ -2113,28 +2034,34 @@ zabbix_export:
           pages:
             - name: Resources
               widgets:
-                - type: GRAPH_CLASSIC
-                  width: '24'
+                - type: graph
+                  width: '72'
                   height: '5'
                   fields:
                     - type: GRAPH
                       name: graphid
                       value:
-                        host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                        host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: Memory utilization'
-                - type: GRAPH_CLASSIC
+                    - type: STRING
+                      name: reference
+                      value: AAAAA
+                - type: graph
                   'y': '5'
-                  width: '12'
+                  width: '36'
                   height: '5'
                   fields:
                     - type: GRAPH
                       name: graphid
                       value:
-                        host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                        host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: Memory usage'
-                - type: GRAPH_PROTOTYPE
+                    - type: STRING
+                      name: reference
+                      value: AAAAB
+                - type: graphprototype
                   'y': '10'
-                  width: '24'
+                  width: '72'
                   height: '5'
                   fields:
                     - type: INTEGER
@@ -2143,14 +2070,17 @@ zabbix_export:
                     - type: GRAPH_PROTOTYPE
                       name: graphid
                       value:
-                        host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                        host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: CPU usage{#SINGLETON}'
+                    - type: STRING
+                      name: reference
+                      value: AAAAC
                     - type: INTEGER
                       name: rows
                       value: '1'
-                - type: GRAPH_PROTOTYPE
+                - type: graphprototype
                   'y': '15'
-                  width: '12'
+                  width: '36'
                   height: '5'
                   fields:
                     - type: INTEGER
@@ -2159,47 +2089,59 @@ zabbix_export:
                     - type: GRAPH_PROTOTYPE
                       name: graphid
                       value:
-                        host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                        host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: CPU utilization{#SINGLETON}'
+                    - type: STRING
+                      name: reference
+                      value: AAAAD
                     - type: INTEGER
                       name: rows
                       value: '1'
-                - type: GRAPH_CLASSIC
+                - type: graph
                   'y': '20'
-                  width: '24'
+                  width: '72'
                   height: '5'
                   fields:
                     - type: GRAPH
                       name: graphid
                       value:
-                        host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                        host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: CPU jumps'
-                - type: GRAPH_CLASSIC
-                  x: '12'
+                    - type: STRING
+                      name: reference
+                      value: AAAAE
+                - type: graph
+                  x: '36'
                   'y': '5'
-                  width: '12'
+                  width: '36'
                   height: '5'
                   fields:
                     - type: GRAPH
                       name: graphid
                       value:
-                        host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                        host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: Swap usage'
-                - type: GRAPH_CLASSIC
-                  x: '12'
+                    - type: STRING
+                      name: reference
+                      value: AAAAF
+                - type: graph
+                  x: '36'
                   'y': '15'
-                  width: '12'
+                  width: '36'
                   height: '5'
                   fields:
                     - type: GRAPH
                       name: graphid
                       value:
-                        host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                        host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: System load'
+                    - type: STRING
+                      name: reference
+                      value: AAAAG
             - name: Disks
               widgets:
-                - type: GRAPH_PROTOTYPE
-                  width: '24'
+                - type: graphprototype
+                  width: '72'
                   height: '5'
                   fields:
                     - type: INTEGER
@@ -2208,14 +2150,17 @@ zabbix_export:
                     - type: GRAPH_PROTOTYPE
                       name: graphid
                       value:
-                        host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                        host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: [{#DEVNAME}]: Read/write rates'
+                    - type: STRING
+                      name: reference
+                      value: AAAAH
                     - type: INTEGER
                       name: rows
                       value: '1'
-                - type: GRAPH_PROTOTYPE
+                - type: graphprototype
                   'y': '5'
-                  width: '24'
+                  width: '72'
                   height: '5'
                   fields:
                     - type: INTEGER
@@ -2224,25 +2169,31 @@ zabbix_export:
                     - type: GRAPH_PROTOTYPE
                       name: graphid
                       value:
-                        host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                        host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: Disk [{#DISK_NAME}]: Temperature'
+                    - type: STRING
+                      name: reference
+                      value: AAAAI
                     - type: INTEGER
                       name: rows
                       value: '1'
             - name: ZFS
               widgets:
-                - type: GRAPH_CLASSIC
-                  width: '24'
+                - type: graph
+                  width: '72'
                   height: '5'
                   fields:
                     - type: GRAPH
                       name: graphid
                       value:
-                        host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                        host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: ARC hit ratio'
-                - type: GRAPH_PROTOTYPE
+                    - type: STRING
+                      name: reference
+                      value: AAAAJ
+                - type: graphprototype
                   'y': '10'
-                  width: '24'
+                  width: '72'
                   height: '5'
                   fields:
                     - type: INTEGER
@@ -2251,14 +2202,17 @@ zabbix_export:
                     - type: GRAPH_PROTOTYPE
                       name: graphid
                       value:
-                        host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                        host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: Pool [{#POOLNAME}]: Read/write rates'
+                    - type: STRING
+                      name: reference
+                      value: AAAAK
                     - type: INTEGER
                       name: rows
                       value: '1'
-                - type: GRAPH_PROTOTYPE
+                - type: graphprototype
                   'y': '15'
-                  width: '24'
+                  width: '72'
                   height: '5'
                   fields:
                     - type: INTEGER
@@ -2267,14 +2221,17 @@ zabbix_export:
                     - type: GRAPH_PROTOTYPE
                       name: graphid
                       value:
-                        host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                        host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: ZFS volume [{#ZVOL_NAME}]: Space usage'
+                    - type: STRING
+                      name: reference
+                      value: AAAAL
                     - type: INTEGER
                       name: rows
                       value: '1'
-                - type: GRAPH_PROTOTYPE
+                - type: graphprototype
                   'y': '20'
-                  width: '24'
+                  width: '72'
                   height: '5'
                   fields:
                     - type: INTEGER
@@ -2283,15 +2240,18 @@ zabbix_export:
                     - type: GRAPH_PROTOTYPE
                       name: graphid
                       value:
-                        host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                        host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: Dataset [{#DATASET_NAME}]: Space usage'
+                    - type: STRING
+                      name: reference
+                      value: AAAAM
                     - type: INTEGER
                       name: rows
                       value: '1'
             - name: 'Network interfaces'
               widgets:
-                - type: GRAPH_PROTOTYPE
-                  width: '24'
+                - type: graphprototype
+                  width: '72'
                   height: '10'
                   fields:
                     - type: INTEGER
@@ -2300,8 +2260,11 @@ zabbix_export:
                     - type: GRAPH_PROTOTYPE
                       name: graphid
                       value:
-                        host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+                        host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: Network traffic'
+                    - type: STRING
+                      name: reference
+                      value: AAAAN
                     - type: INTEGER
                       name: rows
                       value: '1'
@@ -2931,7 +2894,7 @@ zabbix_export:
               newvalue: unknown
   triggers:
     - uuid: 6be42bfec8e24801a4fe9b8159fdaa28
-      expression: 'min(/TrueNAS SCALE 22.12.1 and up by SNMP/system.swap.pfree,5m)<{$SWAP.PFREE.MIN.WARN} and last(/TrueNAS SCALE 22.12.1 and up by SNMP/system.swap.total)>0'
+      expression: 'min(/TrueNAS SCALE by SNMP/system.swap.pfree,5m)<{$SWAP.PFREE.MIN.WARN} and last(/TrueNAS SCALE by SNMP/system.swap.total)>0'
       name: 'TrueNAS: High swap space usage'
       event_name: 'TrueNAS: High swap space usage (less than {$SWAP.PFREE.MIN.WARN}% free)'
       opdata: 'Free: {ITEM.LASTVALUE1}, total: {ITEM.LASTVALUE2}'
@@ -2939,16 +2902,16 @@ zabbix_export:
       description: 'If there is no swap configured, this trigger is ignored.'
       dependencies:
         - name: 'TrueNAS: High memory utilization'
-          expression: 'min(/TrueNAS SCALE 22.12.1 and up by SNMP/vm.memory.util,5m)>{$MEMORY.UTIL.MAX}'
+          expression: 'min(/TrueNAS SCALE by SNMP/vm.memory.util,5m)>{$MEMORY.UTIL.MAX}'
         - name: 'TrueNAS: Lack of available memory'
-          expression: 'min(/TrueNAS SCALE 22.12.1 and up by SNMP/vm.memory.available,5m)<{$MEMORY.AVAILABLE.MIN} and last(/TrueNAS SCALE 22.12.1 and up by SNMP/vm.memory.total)>0'
+          expression: 'min(/TrueNAS SCALE by SNMP/vm.memory.available,5m)<{$MEMORY.AVAILABLE.MIN} and last(/TrueNAS SCALE by SNMP/vm.memory.total)>0'
       tags:
         - tag: scope
           value: capacity
         - tag: scope
           value: performance
     - uuid: feffbfb8cc004a2e84feb1f97357e2cc
-      expression: 'min(/TrueNAS SCALE 22.12.1 and up by SNMP/vm.memory.available,5m)<{$MEMORY.AVAILABLE.MIN} and last(/TrueNAS SCALE 22.12.1 and up by SNMP/vm.memory.total)>0'
+      expression: 'min(/TrueNAS SCALE by SNMP/vm.memory.available,5m)<{$MEMORY.AVAILABLE.MIN} and last(/TrueNAS SCALE by SNMP/vm.memory.total)>0'
       name: 'TrueNAS: Lack of available memory'
       event_name: 'TrueNAS: Lack of available memory (<{$MEMORY.AVAILABLE.MIN} of {ITEM.VALUE2})'
       opdata: 'Available: {ITEM.LASTVALUE1}, total: {ITEM.LASTVALUE2}'
@@ -2961,9 +2924,9 @@ zabbix_export:
           value: performance
     - uuid: af00db7d55374fafbae41dead0ec8a28
       expression: |
-        min(/TrueNAS SCALE 22.12.1 and up by SNMP/system.cpu.load.avg1,5m)/last(/TrueNAS SCALE 22.12.1 and up by SNMP/system.cpu.num)>{$LOAD_AVG_PER_CPU.MAX.WARN}
-        and last(/TrueNAS SCALE 22.12.1 and up by SNMP/system.cpu.load.avg5)>0
-        and last(/TrueNAS SCALE 22.12.1 and up by SNMP/system.cpu.load.avg15)>0
+        min(/TrueNAS SCALE by SNMP/system.cpu.load.avg1,5m)/last(/TrueNAS SCALE by SNMP/system.cpu.num)>{$LOAD_AVG_PER_CPU.MAX.WARN}
+        and last(/TrueNAS SCALE by SNMP/system.cpu.load.avg5)>0
+        and last(/TrueNAS SCALE by SNMP/system.cpu.load.avg15)>0
       name: 'TrueNAS: Load average is too high'
       event_name: 'TrueNAS: Load average is too high (per CPU load over {$LOAD_AVG_PER_CPU.MAX.WARN} for 5m)'
       opdata: 'Load averages(1m 5m 15m): ({ITEM.LASTVALUE1} {ITEM.LASTVALUE3} {ITEM.LASTVALUE4}), # of CPUs: {ITEM.LASTVALUE2}'
@@ -2980,24 +2943,24 @@ zabbix_export:
       graph_items:
         - color: 199C0D
           item:
-            host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+            host: 'TrueNAS SCALE by SNMP'
             key: truenas.zfs.arc.hit.ratio
         - sortorder: '1'
           color: F63100
           item:
-            host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+            host: 'TrueNAS SCALE by SNMP'
             key: truenas.zfs.arc.miss.ratio
     - uuid: ab49c4a1d97944679031b10f7129805c
       name: 'TrueNAS: CPU jumps'
       graph_items:
         - color: 199C0D
           item:
-            host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+            host: 'TrueNAS SCALE by SNMP'
             key: system.cpu.switches
         - sortorder: '1'
           color: F63100
           item:
-            host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+            host: 'TrueNAS SCALE by SNMP'
             key: system.cpu.intr
     - uuid: 6c166b513c4649c8bc672c78e971086a
       name: 'TrueNAS: Memory usage'
@@ -3006,13 +2969,13 @@ zabbix_export:
         - drawtype: BOLD_LINE
           color: 199C0D
           item:
-            host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+            host: 'TrueNAS SCALE by SNMP'
             key: vm.memory.total
         - sortorder: '1'
           drawtype: GRADIENT_LINE
           color: F63100
           item:
-            host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+            host: 'TrueNAS SCALE by SNMP'
             key: vm.memory.available
     - uuid: c8874dc055ad4e13978b2b5025eade5a
       name: 'TrueNAS: Memory utilization'
@@ -3022,19 +2985,19 @@ zabbix_export:
         - drawtype: GRADIENT_LINE
           color: 199C0D
           item:
-            host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+            host: 'TrueNAS SCALE by SNMP'
             key: vm.memory.util
     - uuid: 38a610906157439b96cac8bad65be4a5
       name: 'TrueNAS: Swap usage'
       graph_items:
         - color: 199C0D
           item:
-            host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+            host: 'TrueNAS SCALE by SNMP'
             key: system.swap.free
         - sortorder: '1'
           color: F63100
           item:
-            host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+            host: 'TrueNAS SCALE by SNMP'
             key: system.swap.total
     - uuid: 4e1098e3781944e48516f0754093eca3
       name: 'TrueNAS: System load'
@@ -3042,21 +3005,21 @@ zabbix_export:
       graph_items:
         - color: 199C0D
           item:
-            host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+            host: 'TrueNAS SCALE by SNMP'
             key: system.cpu.load.avg1
         - sortorder: '1'
           color: F63100
           item:
-            host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+            host: 'TrueNAS SCALE by SNMP'
             key: system.cpu.load.avg5
         - sortorder: '2'
           color: 00611C
           item:
-            host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+            host: 'TrueNAS SCALE by SNMP'
             key: system.cpu.load.avg15
         - sortorder: '3'
           color: F7941D
           yaxisside: RIGHT
           item:
-            host: 'TrueNAS SCALE 22.12.1 and up by SNMP'
+            host: 'TrueNAS SCALE by SNMP'
             key: system.cpu.num
