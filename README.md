@@ -17,6 +17,7 @@ Mid 2026 the community made me aware that truenas had been updated and was shipp
 > I am open for pull requests if others are using more complex setups and can find a working solution for their set-up.
 
 ### What works in the latest version
+On top of the standard monitoring like CPU, Memory, ARC, interfaces, ..., this now also supports:
 - [x] Monitoring of a ZPool (Health, Read operations rate, Read rate, Write operations rate, Write rate)
 - [x] Monitoring of a Dataset (Available space, Total space, Usage in %, Used space)
 - [x] Monitoring of a ZVOL (Available space, Used Space, Written space)
