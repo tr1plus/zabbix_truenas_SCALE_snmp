@@ -1,5 +1,5 @@
 zabbix_export:
-  version: '7.4'
+  version: '7.0'
   template_groups:
     - uuid: a571c0d144b14fd4a87a9d9b2aa9fcd6
       name: Templates/Applications
@@ -24,6 +24,9 @@ zabbix_export:
         
         Based on the standard TrueNAS by SNMP template for Zabbix v6.0 LTS, but tweaked to work with later versions of TrueNAS SCALE. As explained here: https://ixsystems.atlassian.net/browse/NAS-120434 SNMP addresses changed a lot.
         More recently they released a TRUENAS-MIB (updated 2026-02-11) which allowed me to finetune some additional metrics.
+      vendor:
+        name: 'https://github.com/tr1plus/zabbix_truenas_SCALE_snmp'
+        version: 7.0-0
       groups:
         - name: Templates/Applications
       items:
@@ -112,13 +115,65 @@ zabbix_export:
           name: 'TrueNAS: SNMP traps (fallback)'
           type: SNMP_TRAP
           key: snmptrap.fallback
+          delay: '0'
           history: 7d
           value_type: LOG
+          trends: '0'
           description: 'The item is used to collect all SNMP traps unmatched by other snmptrap items.'
           logtimefmt: 'hh:mm:sszyyyy/MM/dd'
           tags:
             - tag: component
               value: network
+        - uuid: f10db83388a1411a96b195548a0cca03
+          name: 'TrueNAS: SNMP alert trap'
+          type: SNMP_TRAP
+          key: 'snmptrap["1.3.6.1.4.1.50536.2"]'
+          delay: '0'
+          history: 7d
+          value_type: LOG
+          trends: '0'
+          description: |
+            MIB: TRUENAS-MIB
+            Collects TrueNAS alert notifications (alert / alertCancellation) sent as SNMP traps under the notifications subtree .1.3.6.1.4.1.50536.2. Each trap carries alertId, alertLevel (info..emergency) and alertMessage.
+
+            Requires SNMP traps to be enabled in TrueNAS and an SNMP trap receiver configured in Zabbix. The severity triggers below match the alertLevel varbind in the standard Zabbix trap-receiver format ("INTEGER: <level>"); load TRUENAS-MIB on the trap host for named levels, or the numeric fallback (1..7) is matched as well.
+          logtimefmt: 'hh:mm:sszyyyy/MM/dd'
+          tags:
+            - tag: component
+              value: health
+            - tag: component
+              value: network
+          triggers:
+            - uuid: bca1d9d7dc76441ab86d51771d526540
+              expression: 'find(/TrueNAS SCALE by SNMP/snmptrap["1.3.6.1.4.1.50536.2"],,"regexp","INTEGER: (error|critical|alert|emergency|[4-7])")=1'
+              name: 'TrueNAS: Alert trap - high severity'
+              event_name: 'TrueNAS: Alert trap - high severity: {ITEM.VALUE1}'
+              priority: HIGH
+              description: 'A TrueNAS alert trap with level error/critical/alert/emergency (4-7) was received. Acknowledge to close manually.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: notice
+            - uuid: cff49acebb624a8a9800e653ad32eca2
+              expression: 'find(/TrueNAS SCALE by SNMP/snmptrap["1.3.6.1.4.1.50536.2"],,"regexp","INTEGER: (warning|3)")=1'
+              name: 'TrueNAS: Alert trap - warning'
+              event_name: 'TrueNAS: Alert trap - warning: {ITEM.VALUE1}'
+              priority: WARNING
+              description: 'A TrueNAS alert trap with level warning (3) was received. Acknowledge to close manually.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: notice
+            - uuid: 6f737ff5de2549c08f298d47536b1efd
+              expression: 'find(/TrueNAS SCALE by SNMP/snmptrap["1.3.6.1.4.1.50536.2"],,"regexp","INTEGER: (info|notice|[1-2])")=1'
+              name: 'TrueNAS: Alert trap - info'
+              event_name: 'TrueNAS: Alert trap - info: {ITEM.VALUE1}'
+              priority: INFO
+              description: 'A TrueNAS alert trap with level info/notice (1-2) was received. Acknowledge to close manually.'
+              manual_close: 'YES'
+              tags:
+                - tag: scope
+                  value: notice
         - uuid: 0be94ee849b547e6bf2457fd82a035cb
           name: 'TrueNAS: System contact details'
           type: SNMP_AGENT
@@ -127,6 +182,7 @@ zabbix_export:
           delay: 15m
           history: 7d
           value_type: CHAR
+          trends: '0'
           description: |
             MIB: SNMPv2-MIB
             The textual identification of the contact person for this managed node, together with information on how to contact this person. If no contact information is known, the value is the zero-length string.
@@ -150,6 +206,8 @@ zabbix_export:
             Number of interrupts processed.
           preprocessing:
             - type: CHANGE_PER_SECOND
+              parameters:
+                - ''
           tags:
             - tag: component
               value: cpu
@@ -222,6 +280,8 @@ zabbix_export:
             Number of context switches.
           preprocessing:
             - type: CHANGE_PER_SECOND
+              parameters:
+                - ''
           tags:
             - tag: component
               value: cpu
@@ -233,6 +293,7 @@ zabbix_export:
           delay: 15m
           history: 7d
           value_type: CHAR
+          trends: '0'
           description: |
             MIB: SNMPv2-MIB
             System description of the host.
@@ -251,6 +312,7 @@ zabbix_export:
           delay: 15m
           history: 7d
           value_type: CHAR
+          trends: '0'
           description: |
             MIB: SNMPv2-MIB
             The physical location of this node. If the location is unknown, the value is the zero-length string.
@@ -270,6 +332,7 @@ zabbix_export:
           delay: 15m
           history: 7d
           value_type: CHAR
+          trends: '0'
           description: |
             MIB: SNMPv2-MIB
             The host name of the system.
@@ -302,6 +365,7 @@ zabbix_export:
           delay: 15m
           history: 7d
           value_type: CHAR
+          trends: '0'
           description: |
             MIB: SNMPv2-MIB
             The vendor authoritative identification of the network management subsystem contained in the entity. This value is allocated within the SMI enterprises subtree (1.3.6.1.4.1) and provides an easy and unambiguous means for determining what kind of box is being managed.
@@ -408,7 +472,7 @@ zabbix_export:
           history: 7d
           units: B
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             ARC target size of cache in bytes.
           preprocessing:
             - type: MULTIPLIER
@@ -430,8 +494,27 @@ zabbix_export:
           history: 7d
           units: B
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             ARC data size used in bytes.
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '1024'
+          tags:
+            - tag: component
+              value: memory
+            - tag: component
+              value: zfs
+        - uuid: 3f8c1d2e4a5b46c79d0e1f2a3b4c5d6e
+          name: 'TrueNAS: ARC metadata size'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.50536.1.3.2.0
+          key: truenas.zfs.arc.meta
+          history: 7d
+          units: B
+          description: |
+            MIB: TRUENAS-MIB
+            ARC metadata size used in bytes.
           preprocessing:
             - type: MULTIPLIER
               parameters:
@@ -450,7 +533,7 @@ zabbix_export:
           value_type: FLOAT
           units: '%'
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             ARC cache hit ration percentage.
           tags:
             - tag: component
@@ -465,10 +548,12 @@ zabbix_export:
           history: 7d
           value_type: FLOAT
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             Total amount of cache hits in the ARC per second.
           preprocessing:
             - type: CHANGE_PER_SECOND
+              parameters:
+                - ''
           tags:
             - tag: component
               value: memory
@@ -483,7 +568,7 @@ zabbix_export:
           value_type: FLOAT
           units: '%'
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             ARC cache miss ration percentage.
           tags:
             - tag: component
@@ -498,10 +583,12 @@ zabbix_export:
           history: 7d
           value_type: FLOAT
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             Total amount of cache misses in the ARC per second.
           preprocessing:
             - type: CHANGE_PER_SECOND
+              parameters:
+                - ''
           tags:
             - tag: component
               value: memory
@@ -515,7 +602,7 @@ zabbix_export:
           history: 7d
           units: B
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             ARC size in bytes.
           preprocessing:
             - type: MULTIPLIER
@@ -532,16 +619,17 @@ zabbix_export:
         - uuid: 5b4d5210858a4fef9ac2cde0b982691d
           name: 'TrueNAS: L2ARC hits'
           type: SNMP_AGENT
-          snmp_oid: .1.3.6.1.4.1.50536.1.5.1.0
+          snmp_oid: .1.3.6.1.4.1.50536.1.4.1.0
           key: truenas.zfs.l2arc.hits
           history: 7d
           value_type: FLOAT
-          status: DISABLED
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             Hits to the L2 cache per second.
           preprocessing:
             - type: CHANGE_PER_SECOND
+              parameters:
+                - ''
           tags:
             - tag: component
               value: memory
@@ -550,16 +638,17 @@ zabbix_export:
         - uuid: 8a5978a8ca6b4e6894227feacad7d5b6
           name: 'TrueNAS: L2ARC misses'
           type: SNMP_AGENT
-          snmp_oid: .1.3.6.1.4.1.50536.1.5.2.0
+          snmp_oid: .1.3.6.1.4.1.50536.1.4.2.0
           key: truenas.zfs.l2arc.misses
           history: 7d
           value_type: FLOAT
-          status: DISABLED
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             Misses to the L2 cache per second.
           preprocessing:
             - type: CHANGE_PER_SECOND
+              parameters:
+                - ''
           tags:
             - tag: component
               value: memory
@@ -568,17 +657,18 @@ zabbix_export:
         - uuid: b6b7096f545b43a594246f06dbc66d90
           name: 'TrueNAS: L2ARC read rate'
           type: SNMP_AGENT
-          snmp_oid: .1.3.6.1.4.1.50536.1.5.3.0
+          snmp_oid: .1.3.6.1.4.1.50536.1.4.3.0
           key: truenas.zfs.l2arc.read
           history: 7d
           value_type: FLOAT
-          status: DISABLED
           units: Bps
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             Read rate from L2 cache in bytes per second.
           preprocessing:
             - type: CHANGE_PER_SECOND
+              parameters:
+                - ''
           tags:
             - tag: component
               value: memory
@@ -587,14 +677,13 @@ zabbix_export:
         - uuid: a5977dd217284f4a873da747fb9eafa0
           name: 'TrueNAS: L2ARC size'
           type: SNMP_AGENT
-          snmp_oid: .1.3.6.1.4.1.50536.1.5.5.0
+          snmp_oid: .1.3.6.1.4.1.50536.1.4.5.0
           key: truenas.zfs.l2arc.size
           history: 7d
           value_type: FLOAT
-          status: DISABLED
           units: B
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             L2ARC size in bytes.
           preprocessing:
             - type: MULTIPLIER
@@ -611,17 +700,18 @@ zabbix_export:
         - uuid: d3d3e28d589c45eaa5f6b160ece74f00
           name: 'TrueNAS: L2ARC write rate'
           type: SNMP_AGENT
-          snmp_oid: .1.3.6.1.4.1.50536.1.5.4.0
+          snmp_oid: .1.3.6.1.4.1.50536.1.4.4.0
           key: truenas.zfs.l2arc.write
           history: 7d
           value_type: FLOAT
-          status: DISABLED
           units: Bps
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             Write rate from L2 cache in bytes per second.
           preprocessing:
             - type: CHANGE_PER_SECOND
+              parameters:
+                - ''
           tags:
             - tag: component
               value: memory
@@ -630,12 +720,12 @@ zabbix_export:
         - uuid: 150cf43146e945638d196d088202ad61
           name: 'TrueNAS: ZIL operations 1 second'
           type: SNMP_AGENT
-          snmp_oid: .1.3.6.1.4.1.50536.1.4.1.0
+          snmp_oid: .1.3.6.1.4.1.50536.1.5.1.0
           key: truenas.zfs.zil.ops1
           history: 7d
           value_type: FLOAT
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             The ops column parsed from the command zilstat 1 1.
           tags:
             - tag: component
@@ -645,12 +735,12 @@ zabbix_export:
         - uuid: 736c1c7bacd3487d8cbc01cde855bf7f
           name: 'TrueNAS: ZIL operations 5 seconds'
           type: SNMP_AGENT
-          snmp_oid: .1.3.6.1.4.1.50536.1.4.2.0
+          snmp_oid: .1.3.6.1.4.1.50536.1.5.2.0
           key: truenas.zfs.zil.ops5
           history: 7d
           value_type: FLOAT
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             The ops column parsed from the command zilstat 5 1.
           tags:
             - tag: component
@@ -660,12 +750,12 @@ zabbix_export:
         - uuid: 06ffdded5c3245f7808fe0b2831755ea
           name: 'TrueNAS: ZIL operations 10 seconds'
           type: SNMP_AGENT
-          snmp_oid: .1.3.6.1.4.1.50536.1.4.3.0
+          snmp_oid: .1.3.6.1.4.1.50536.1.5.3.0
           key: truenas.zfs.zil.ops10
           history: 7d
           value_type: FLOAT
           description: |
-            MIB: FREENAS-MIB
+            MIB: TRUENAS-MIB
             The ops column parsed from the command zilstat 10 1.
           tags:
             - tag: component
@@ -814,6 +904,7 @@ zabbix_export:
           name: 'CPU discovery'
           type: DEPENDENT
           key: cpu.discovery
+          delay: '0'
           lifetime: 30d
           enabled_lifetime_type: DISABLE_NEVER
           description: 'This discovery will create set of per core CPU metrics from UCD-SNMP-MIB, using {#CPU.COUNT} in preprocessing. That''s the only reason why LLD is used.'
@@ -845,6 +936,8 @@ zabbix_export:
                 The amount of time the CPU has been servicing hardware interrupts.
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
                 - type: JAVASCRIPT
                   parameters:
                     - |
@@ -866,6 +959,8 @@ zabbix_export:
                 The amount of time the CPU has been waiting for I/O to complete.
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
                 - type: JAVASCRIPT
                   parameters:
                     - |
@@ -887,6 +982,8 @@ zabbix_export:
                 The time the CPU has spent running users' processes that have been niced.
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
                 - type: JAVASCRIPT
                   parameters:
                     - |
@@ -908,6 +1005,8 @@ zabbix_export:
                 The time the CPU has spent running the kernel and its processes.
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
                 - type: JAVASCRIPT
                   parameters:
                     - |
@@ -929,6 +1028,8 @@ zabbix_export:
                 The time the CPU has spent running users' processes that are not niced.
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
                 - type: JAVASCRIPT
                   parameters:
                     - |
@@ -941,6 +1042,7 @@ zabbix_export:
               name: 'TrueNAS: CPU utilization'
               type: DEPENDENT
               key: 'system.cpu.util[{#SNMPINDEX}]'
+              delay: '0'
               history: 7d
               value_type: FLOAT
               units: '%'
@@ -1033,34 +1135,46 @@ zabbix_export:
             conditions:
               - macro: '{#IFADMINSTATUS}'
                 value: '{$NET.IF.IFADMINSTATUS.MATCHES}'
+                formulaid: A
               - macro: '{#IFADMINSTATUS}'
                 value: '{$NET.IF.IFADMINSTATUS.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
+                formulaid: B
               - macro: '{#IFALIAS}'
                 value: '{$NET.IF.IFALIAS.MATCHES}'
+                formulaid: C
               - macro: '{#IFALIAS}'
                 value: '{$NET.IF.IFALIAS.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
+                formulaid: D
               - macro: '{#IFDESCR}'
                 value: '{$NET.IF.IFDESCR.MATCHES}'
+                formulaid: E
               - macro: '{#IFDESCR}'
                 value: '{$NET.IF.IFDESCR.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
+                formulaid: F
               - macro: '{#IFNAME}'
                 value: '@Network interfaces for discovery'
+                formulaid: G
               - macro: '{#IFNAME}'
                 value: '{$NET.IF.IFNAME.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
+                formulaid: H
               - macro: '{#IFOPERSTATUS}'
                 value: '{$NET.IF.IFOPERSTATUS.MATCHES}'
+                formulaid: I
               - macro: '{#IFOPERSTATUS}'
                 value: '{$NET.IF.IFOPERSTATUS.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
+                formulaid: J
               - macro: '{#IFTYPE}'
                 value: '{$NET.IF.IFTYPE.MATCHES}'
+                formulaid: K
               - macro: '{#IFTYPE}'
                 value: '{$NET.IF.IFTYPE.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
+                formulaid: L
           lifetime: 30d
           enabled_lifetime_type: DISABLE_NEVER
           description: 'Discovering interfaces from IF-MIB.'
@@ -1080,6 +1194,8 @@ zabbix_export:
                 and at other times as indicated by the value of ifCounterDiscontinuityTime.
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
               tags:
                 - tag: component
                   value: network
@@ -1098,6 +1214,8 @@ zabbix_export:
                 For packet-oriented interfaces, the number of inbound packets that contained errors preventing them from being deliverable to a higher-layer protocol.  For character-oriented or fixed-length interfaces, the number of inbound transmission units that contained errors preventing them from being deliverable to a higher-layer protocol. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
               tags:
                 - tag: component
                   value: network
@@ -1133,6 +1251,8 @@ zabbix_export:
                 The total number of octets received on the interface, including framing characters. This object is a 64-bit version of ifInOctets. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
                 - type: MULTIPLIER
                   parameters:
                     - '8'
@@ -1158,6 +1278,8 @@ zabbix_export:
                 and at other times as indicated by the value of ifCounterDiscontinuityTime.
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
               tags:
                 - tag: component
                   value: network
@@ -1176,6 +1298,8 @@ zabbix_export:
                 For packet-oriented interfaces, the number of outbound packets that contained errors preventing them from being deliverable to a higher-layer protocol.  For character-oriented or fixed-length interfaces, the number of outbound transmission units that contained errors preventing them from being deliverable to a higher-layer protocol. Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
               tags:
                 - tag: component
                   value: network
@@ -1211,6 +1335,8 @@ zabbix_export:
                 The total number of octets transmitted out of the interface, including framing characters. This object is a 64-bit version of ifOutOctets.Discontinuities in the value of this counter can occur at re-initialization of the management system, and at other times as indicated by the value of ifCounterDiscontinuityTime.
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
                 - type: MULTIPLIER
                   parameters:
                     - '8'
@@ -1419,7 +1545,7 @@ zabbix_export:
           delay: 1h
           lifetime: 30d
           enabled_lifetime_type: DISABLE_NEVER
-          description: 'Disks temperature discovery from FREENAS-MIB.'
+          description: 'Disks temperature discovery from TRUENAS-MIB.'
           item_prototypes:
             - uuid: fb7256703e744217bd804cc06919353b
               name: 'TrueNAS: Disk [{#DISK_NAME}]: Temperature'
@@ -1430,7 +1556,7 @@ zabbix_export:
               value_type: FLOAT
               units: C
               description: |
-                MIB: FREENAS-MIB
+                MIB: TRUENAS-MIB
                 The temperature of this HDD in mC.
               preprocessing:
                 - type: MULTIPLIER
@@ -1488,12 +1614,14 @@ zabbix_export:
             conditions:
               - macro: '{#DATASET_NAME}'
                 value: '{$DATASET.NAME.MATCHES}'
+                formulaid: A
               - macro: '{#DATASET_NAME}'
                 value: '{$DATASET.NAME.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
+                formulaid: B
           lifetime: 30d
           enabled_lifetime_type: DISABLE_NEVER
-          description: 'ZFS datasets discovery from FREENAS-MIB.'
+          description: 'ZFS datasets discovery from TRUENAS-MIB.'
           item_prototypes:
             - uuid: 2507ddcc2cb143e7b473fd8e4dc7e002
               name: 'TrueNAS: Dataset [{#DATASET_NAME}]: Available space'
@@ -1503,7 +1631,7 @@ zabbix_export:
               history: 7d
               units: B
               description: |
-                MIB: FREENAS-MIB
+                MIB: TRUENAS-MIB
                 The available size of the dataset in bytes.
               tags:
                 - tag: component
@@ -1546,7 +1674,7 @@ zabbix_export:
               history: 7d
               units: B
               description: |
-                MIB: FREENAS-MIB
+                MIB: TRUENAS-MIB
                 The used size of the dataset in bytes.
               tags:
                 - tag: component
@@ -1607,22 +1735,29 @@ zabbix_export:
                   item:
                     host: 'TrueNAS SCALE by SNMP'
                     key: 'truenas.dataset.used[{#DATASET_NAME}]'
+            - uuid: adcda3a18aab45758386025e0c2b9346
+              name: 'TrueNAS: Dataset [{#DATASET_NAME}]: Space usage over time'
+              width: '600'
+              height: '340'
+              show_work_period: 'NO'
+              show_triggers: 'NO'
+              ymin_type_1: FIXED
+              graph_items:
+                - color: '969696'
+                  calc_fnc: ALL
+                  item:
+                    host: 'TrueNAS SCALE by SNMP'
+                    key: 'truenas.dataset.size.total[{#DATASET_NAME}]'
+                - sortorder: '1'
+                  color: C80000
+                  calc_fnc: ALL
+                  item:
+                    host: 'TrueNAS SCALE by SNMP'
+                    key: 'truenas.dataset.used[{#DATASET_NAME}]'
           preprocessing:
             - type: DISCARD_UNCHANGED_HEARTBEAT
               parameters:
                 - 6h
-          overrides:
-            - name: 'Only calculate max size on root datasets'
-              step: '1'
-              filter:
-                conditions:
-                  - macro: '{#DATASET_NAME}'
-                    value: '{$DATASET.ROOT}'
-              operations:
-                - operator: NOT_LIKE
-                  value: 'Used space'
-                  discover: NO_DISCOVER
-                  status: DISABLED
         - uuid: be71fd8c7dbd43a08b9d38e5139db540
           name: 'ZFS pools discovery'
           type: SNMP_AGENT
@@ -1631,7 +1766,7 @@ zabbix_export:
           delay: 1h
           lifetime: 30d
           enabled_lifetime_type: DISABLE_NEVER
-          description: 'ZFS pools discovery from FREENAS-MIB.'
+          description: 'ZFS pools discovery from TRUENAS-MIB.'
           item_prototypes:
             - uuid: 19ea6a946123425dad68cc268b6f5d2e
               name: 'TrueNAS: Pool [{#POOLNAME}]: Health'
@@ -1640,8 +1775,9 @@ zabbix_export:
               key: 'truenas.zpool.health[{#POOLNAME}]'
               history: 7d
               value_type: CHAR
+              trends: '0'
               description: |
-                MIB: FREENAS-MIB
+                MIB: TRUENAS-MIB
                 The current health of the containing pool, as reported by zpool status.
               preprocessing:
                 - type: DISCARD_UNCHANGED_HEARTBEAT
@@ -1656,11 +1792,35 @@ zabbix_export:
                   value: '{#POOLNAME}'
               trigger_prototypes:
                 - uuid: 29bdd2cae71c4d1ba5577c9193bd754d
-                  expression: 'last(/TrueNAS SCALE by SNMP/truenas.zpool.health[{#POOLNAME}]) <> "ONLINE"'
+                  expression: |
+                    last(/TrueNAS SCALE by SNMP/truenas.zpool.health[{#POOLNAME}])="FAULTED"
+                    or last(/TrueNAS SCALE by SNMP/truenas.zpool.health[{#POOLNAME}])="UNAVAIL"
+                    or last(/TrueNAS SCALE by SNMP/truenas.zpool.health[{#POOLNAME}])="REMOVED"
+                  name: 'TrueNAS: Pool [{#POOLNAME}]: Status is critical'
+                  event_name: 'TrueNAS: Pool [{#POOLNAME}]: Status is critical ({ITEM.LASTVALUE1})'
+                  opdata: 'Current state: {ITEM.LASTVALUE1}'
+                  priority: HIGH
+                  description: 'The pool is FAULTED, UNAVAIL or REMOVED - data is likely inaccessible. Check pool status immediately.'
+                  tags:
+                    - tag: scope
+                      value: availability
+                - uuid: 1bfc120c55e946438baee29afd83225b
+                  expression: |
+                    last(/TrueNAS SCALE by SNMP/truenas.zpool.health[{#POOLNAME}])<>"ONLINE"
+                    and last(/TrueNAS SCALE by SNMP/truenas.zpool.health[{#POOLNAME}])<>"FAULTED"
+                    and last(/TrueNAS SCALE by SNMP/truenas.zpool.health[{#POOLNAME}])<>"UNAVAIL"
+                    and last(/TrueNAS SCALE by SNMP/truenas.zpool.health[{#POOLNAME}])<>"REMOVED"
                   name: 'TrueNAS: Pool [{#POOLNAME}]: Status is not online'
+                  event_name: 'TrueNAS: Pool [{#POOLNAME}]: Status is not online ({ITEM.LASTVALUE1})'
                   opdata: 'Current state: {ITEM.LASTVALUE1}'
                   priority: AVERAGE
-                  description: 'Please check pool status.'
+                  description: 'The pool is not ONLINE (e.g. DEGRADED or OFFLINE). Please check pool status.'
+                  dependencies:
+                    - name: 'TrueNAS: Pool [{#POOLNAME}]: Status is critical'
+                      expression: |
+                        last(/TrueNAS SCALE by SNMP/truenas.zpool.health[{#POOLNAME}])="FAULTED"
+                        or last(/TrueNAS SCALE by SNMP/truenas.zpool.health[{#POOLNAME}])="UNAVAIL"
+                        or last(/TrueNAS SCALE by SNMP/truenas.zpool.health[{#POOLNAME}])="REMOVED"
                   tags:
                     - tag: scope
                       value: availability
@@ -1673,10 +1833,12 @@ zabbix_export:
               value_type: FLOAT
               units: Bps
               description: |
-                MIB: FREENAS-MIB
+                MIB: TRUENAS-MIB
                 The bandwidth of all read operations (including metadata), expressed as units per second (averaged since system booted).
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
               tags:
                 - tag: component
                   value: storage
@@ -1691,10 +1853,12 @@ zabbix_export:
               value_type: FLOAT
               units: IOPS
               description: |
-                MIB: FREENAS-MIB
+                MIB: TRUENAS-MIB
                 The number of read I/O operations sent to the pool or device, including metadata requests (averaged since system booted).
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
               tags:
                 - tag: component
                   value: storage
@@ -1709,10 +1873,12 @@ zabbix_export:
               value_type: FLOAT
               units: Bps
               description: |
-                MIB: FREENAS-MIB
+                MIB: TRUENAS-MIB
                 The bandwidth of all write operations, expressed as units per second (averaged since system booted).
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
               tags:
                 - tag: component
                   value: storage
@@ -1727,10 +1893,12 @@ zabbix_export:
               value_type: FLOAT
               units: IOPS
               description: |
-                MIB: FREENAS-MIB
+                MIB: TRUENAS-MIB
                 The number of write I/O operations sent to the pool or device (averaged since system booted).
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
               tags:
                 - tag: component
                   value: storage
@@ -1750,6 +1918,19 @@ zabbix_export:
                   item:
                     host: 'TrueNAS SCALE by SNMP'
                     key: 'truenas.zpool.write.bytes[{#POOLNAME}]'
+            - uuid: 47693f7cf72947d385b727b6d950c0a4
+              name: 'TrueNAS: Pool [{#POOLNAME}]: Read/write operations rate'
+              graph_items:
+                - color: 199C0D
+                  item:
+                    host: 'TrueNAS SCALE by SNMP'
+                    key: 'truenas.zpool.read.ops[{#POOLNAME}]'
+                - sortorder: '1'
+                  drawtype: GRADIENT_LINE
+                  color: F63100
+                  item:
+                    host: 'TrueNAS SCALE by SNMP'
+                    key: 'truenas.zpool.write.ops[{#POOLNAME}]'
           preprocessing:
             - type: DISCARD_UNCHANGED_HEARTBEAT
               parameters:
@@ -1762,7 +1943,7 @@ zabbix_export:
           delay: 1h
           lifetime: 30d
           enabled_lifetime_type: DISABLE_NEVER
-          description: 'ZFS volumes discovery from FREENAS-MIB.'
+          description: 'ZFS volumes discovery from TRUENAS-MIB.'
           item_prototypes:
             - uuid: 9c3507ab4a114dd4bd08e31a268663fa
               name: 'TrueNAS: ZFS volume [{#ZVOL_NAME}]: Available space'
@@ -1772,7 +1953,7 @@ zabbix_export:
               history: 7d
               units: B
               description: |
-                MIB: FREENAS-MIB
+                MIB: TRUENAS-MIB
                 The available of the ZFS volume in bytes.
               tags:
                 - tag: component
@@ -1787,7 +1968,7 @@ zabbix_export:
               history: 7d
               units: B
               description: |
-                MIB: FREENAS-MIB
+                MIB: TRUENAS-MIB
                 The used size of the ZFS volume in bytes.
               tags:
                 - tag: component
@@ -1802,7 +1983,7 @@ zabbix_export:
               history: 7d
               units: B
               description: |
-                MIB: FREENAS-MIB
+                MIB: TRUENAS-MIB
                 The used size of the ZFS volume in bytes.
               tags:
                 - tag: component
@@ -1823,6 +2004,26 @@ zabbix_export:
                   item:
                     host: 'TrueNAS SCALE by SNMP'
                     key: 'truenas.zvol.used[{#ZVOL_NAME}]'
+            - uuid: 2690a72adb624519b40fe8387da54d7b
+              name: 'TrueNAS: ZFS volume [{#ZVOL_NAME}]: Space usage over time'
+              width: '600'
+              height: '340'
+              show_work_period: 'NO'
+              show_triggers: 'NO'
+              ymin_type_1: FIXED
+              graph_items:
+                - sortorder: '1'
+                  color: C80000
+                  calc_fnc: ALL
+                  item:
+                    host: 'TrueNAS SCALE by SNMP'
+                    key: 'truenas.zvol.used[{#ZVOL_NAME}]'
+                - sortorder: '1'
+                  color: '274482'
+                  calc_fnc: ALL
+                  item:
+                    host: 'TrueNAS SCALE by SNMP'
+                    key: 'truenas.zvol.avail[{#ZVOL_NAME}]'
           preprocessing:
             - type: DISCARD_UNCHANGED_HEARTBEAT
               parameters:
@@ -1838,9 +2039,11 @@ zabbix_export:
             conditions:
               - macro: '{#DEVNAME}'
                 value: '{$VFS.DEV.DEVNAME.MATCHES}'
+                formulaid: A
               - macro: '{#DEVNAME}'
                 value: '{$VFS.DEV.DEVNAME.NOT_MATCHES}'
                 operator: NOT_MATCHES_REGEX
+                formulaid: B
           lifetime: 30d
           enabled_lifetime_type: DISABLE_NEVER
           description: 'Block devices are discovered from UCD-DISKIO-MIB::diskIOTable (http://net-snmp.sourceforge.net/docs/mibs/ucdDiskIOMIB.html#diskIOTable).'
@@ -1858,6 +2061,8 @@ zabbix_export:
                 The number of read accesses from this device since boot.
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
               tags:
                 - tag: component
                   value: storage
@@ -1892,6 +2097,8 @@ zabbix_export:
                 The number of write accesses from this device since boot.
               preprocessing:
                 - type: CHANGE_PER_SECOND
+                  parameters:
+                    - ''
               tags:
                 - tag: component
                   value: storage
@@ -1938,9 +2145,6 @@ zabbix_export:
         - macro: '{$DATASET.PUSED.MAX.WARN}'
           value: '80'
           description: 'Threshold of used dataset space for warning trigger in %.'
-        - macro: '{$DATASET.ROOT}'
-          value: ^(.+\/(.+))
-          description: 'This macro is used in datasets discovery. Can be overridden on the host or linked template level'
         - macro: '{$ICMP_LOSS_WARN}'
           value: '20'
           description: 'Threshold of ICMP packets loss for warning trigger in %.'
@@ -2039,7 +2243,7 @@ zabbix_export:
                   height: '5'
                   fields:
                     - type: GRAPH
-                      name: graphid
+                      name: graphid.0
                       value:
                         host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: Memory utilization'
@@ -2052,7 +2256,7 @@ zabbix_export:
                   height: '5'
                   fields:
                     - type: GRAPH
-                      name: graphid
+                      name: graphid.0
                       value:
                         host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: Memory usage'
@@ -2068,16 +2272,13 @@ zabbix_export:
                       name: columns
                       value: '1'
                     - type: GRAPH_PROTOTYPE
-                      name: graphid
+                      name: graphid.0
                       value:
                         host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: CPU usage{#SINGLETON}'
                     - type: STRING
                       name: reference
                       value: AAAAC
-                    - type: INTEGER
-                      name: rows
-                      value: '1'
                 - type: graphprototype
                   'y': '15'
                   width: '36'
@@ -2087,23 +2288,20 @@ zabbix_export:
                       name: columns
                       value: '1'
                     - type: GRAPH_PROTOTYPE
-                      name: graphid
+                      name: graphid.0
                       value:
                         host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: CPU utilization{#SINGLETON}'
                     - type: STRING
                       name: reference
                       value: AAAAD
-                    - type: INTEGER
-                      name: rows
-                      value: '1'
                 - type: graph
                   'y': '20'
                   width: '72'
                   height: '5'
                   fields:
                     - type: GRAPH
-                      name: graphid
+                      name: graphid.0
                       value:
                         host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: CPU jumps'
@@ -2117,7 +2315,7 @@ zabbix_export:
                   height: '5'
                   fields:
                     - type: GRAPH
-                      name: graphid
+                      name: graphid.0
                       value:
                         host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: Swap usage'
@@ -2131,7 +2329,7 @@ zabbix_export:
                   height: '5'
                   fields:
                     - type: GRAPH
-                      name: graphid
+                      name: graphid.0
                       value:
                         host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: System load'
@@ -2148,16 +2346,13 @@ zabbix_export:
                       name: columns
                       value: '1'
                     - type: GRAPH_PROTOTYPE
-                      name: graphid
+                      name: graphid.0
                       value:
                         host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: [{#DEVNAME}]: Read/write rates'
                     - type: STRING
                       name: reference
                       value: AAAAH
-                    - type: INTEGER
-                      name: rows
-                      value: '1'
                 - type: graphprototype
                   'y': '5'
                   width: '72'
@@ -2167,16 +2362,13 @@ zabbix_export:
                       name: columns
                       value: '1'
                     - type: GRAPH_PROTOTYPE
-                      name: graphid
+                      name: graphid.0
                       value:
                         host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: Disk [{#DISK_NAME}]: Temperature'
                     - type: STRING
                       name: reference
                       value: AAAAI
-                    - type: INTEGER
-                      name: rows
-                      value: '1'
             - name: ZFS
               widgets:
                 - type: graph
@@ -2184,13 +2376,29 @@ zabbix_export:
                   height: '5'
                   fields:
                     - type: GRAPH
-                      name: graphid
+                      name: graphid.0
                       value:
                         host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: ARC hit ratio'
                     - type: STRING
                       name: reference
                       value: AAAAJ
+                - type: graphprototype
+                  'y': '5'
+                  width: '72'
+                  height: '5'
+                  fields:
+                    - type: INTEGER
+                      name: columns
+                      value: '1'
+                    - type: GRAPH_PROTOTYPE
+                      name: graphid.0
+                      value:
+                        host: 'TrueNAS SCALE by SNMP'
+                        name: 'TrueNAS: Pool [{#POOLNAME}]: Read/write rates'
+                    - type: STRING
+                      name: reference
+                      value: AAAAK
                 - type: graphprototype
                   'y': '10'
                   width: '72'
@@ -2200,16 +2408,13 @@ zabbix_export:
                       name: columns
                       value: '1'
                     - type: GRAPH_PROTOTYPE
-                      name: graphid
+                      name: graphid.0
                       value:
                         host: 'TrueNAS SCALE by SNMP'
-                        name: 'TrueNAS: Pool [{#POOLNAME}]: Read/write rates'
+                        name: 'TrueNAS: ZFS volume [{#ZVOL_NAME}]: Space usage'
                     - type: STRING
                       name: reference
-                      value: AAAAK
-                    - type: INTEGER
-                      name: rows
-                      value: '1'
+                      value: AAAAL
                 - type: graphprototype
                   'y': '15'
                   width: '72'
@@ -2219,35 +2424,92 @@ zabbix_export:
                       name: columns
                       value: '1'
                     - type: GRAPH_PROTOTYPE
-                      name: graphid
-                      value:
-                        host: 'TrueNAS SCALE by SNMP'
-                        name: 'TrueNAS: ZFS volume [{#ZVOL_NAME}]: Space usage'
-                    - type: STRING
-                      name: reference
-                      value: AAAAL
-                    - type: INTEGER
-                      name: rows
-                      value: '1'
-                - type: graphprototype
-                  'y': '20'
-                  width: '72'
-                  height: '5'
-                  fields:
-                    - type: INTEGER
-                      name: columns
-                      value: '1'
-                    - type: GRAPH_PROTOTYPE
-                      name: graphid
+                      name: graphid.0
                       value:
                         host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: Dataset [{#DATASET_NAME}]: Space usage'
                     - type: STRING
                       name: reference
                       value: AAAAM
-                    - type: INTEGER
-                      name: rows
-                      value: '1'
+                - type: graphprototype
+                  'y': '20'
+                  width: '48'
+                  height: '5'
+                  fields:
+                    - type: GRAPH_PROTOTYPE
+                      name: graphid.0
+                      value:
+                        host: 'TrueNAS SCALE by SNMP'
+                        name: 'TrueNAS: Dataset [{#DATASET_NAME}]: Space usage over time'
+                    - type: STRING
+                      name: reference
+                      value: IWMDC
+                - type: graphprototype
+                  'y': '25'
+                  width: '48'
+                  height: '5'
+                  fields:
+                    - type: GRAPH_PROTOTYPE
+                      name: graphid.0
+                      value:
+                        host: 'TrueNAS SCALE by SNMP'
+                        name: 'TrueNAS: ZFS volume [{#ZVOL_NAME}]: Space usage over time'
+                    - type: STRING
+                      name: reference
+                      value: LLBHL
+                - type: graph
+                  'y': '30'
+                  width: '72'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'TrueNAS SCALE by SNMP'
+                        name: 'TrueNAS: ARC composition'
+                    - type: STRING
+                      name: reference
+                      value: ARCMP
+                - type: graph
+                  'y': '35'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'TrueNAS SCALE by SNMP'
+                        name: 'TrueNAS: L2ARC throughput'
+                    - type: STRING
+                      name: reference
+                      value: L2THR
+                - type: graph
+                  x: '36'
+                  'y': '35'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'TrueNAS SCALE by SNMP'
+                        name: 'TrueNAS: L2ARC efficiency'
+                    - type: STRING
+                      name: reference
+                      value: L2HIM
+                - type: graph
+                  'y': '40'
+                  width: '72'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid.0
+                      value:
+                        host: 'TrueNAS SCALE by SNMP'
+                        name: 'TrueNAS: ZIL operations'
+                    - type: STRING
+                      name: reference
+                      value: ZILOP
             - name: 'Network interfaces'
               widgets:
                 - type: graphprototype
@@ -2258,19 +2520,16 @@ zabbix_export:
                       name: columns
                       value: '1'
                     - type: GRAPH_PROTOTYPE
-                      name: graphid
+                      name: graphid.0
                       value:
                         host: 'TrueNAS SCALE by SNMP'
                         name: 'TrueNAS: Interface [{#IFNAME}({#IFALIAS})]: Network traffic'
                     - type: STRING
                       name: reference
                       value: AAAAN
-                    - type: INTEGER
-                      name: rows
-                      value: '1'
       valuemaps:
         - uuid: cd85986551ca4b0495b984f3d0168749
-          name: 'FREENAS-MIB::ZPoolHealthType'
+          name: 'TRUENAS-MIB::ZPoolHealthType'
           mappings:
             - value: '0'
               newvalue: online
@@ -2950,6 +3209,75 @@ zabbix_export:
           item:
             host: 'TrueNAS SCALE by SNMP'
             key: truenas.zfs.arc.miss.ratio
+    - uuid: 2e2c6f8544544c308945b01033266931
+      name: 'TrueNAS: ARC composition'
+      ymin_type_1: FIXED
+      graph_items:
+        - drawtype: BOLD_LINE
+          color: 199C0D
+          item:
+            host: 'TrueNAS SCALE by SNMP'
+            key: truenas.zfs.arc.size
+        - sortorder: '1'
+          color: '2774A4'
+          item:
+            host: 'TrueNAS SCALE by SNMP'
+            key: truenas.zfs.arc.c
+        - sortorder: '2'
+          color: F63100
+          item:
+            host: 'TrueNAS SCALE by SNMP'
+            key: truenas.zfs.arc.data
+        - sortorder: '3'
+          color: F7941D
+          item:
+            host: 'TrueNAS SCALE by SNMP'
+            key: truenas.zfs.arc.meta
+    - uuid: 7ec906b2683842c4b6199351c2eb94bd
+      name: 'TrueNAS: L2ARC throughput'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 199C0D
+          item:
+            host: 'TrueNAS SCALE by SNMP'
+            key: truenas.zfs.l2arc.read
+        - sortorder: '1'
+          color: F63100
+          item:
+            host: 'TrueNAS SCALE by SNMP'
+            key: truenas.zfs.l2arc.write
+    - uuid: e1237a388ee441eaa4a6f901aa7e8eba
+      name: 'TrueNAS: L2ARC efficiency'
+      type: STACKED
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 199C0D
+          item:
+            host: 'TrueNAS SCALE by SNMP'
+            key: truenas.zfs.l2arc.hits
+        - sortorder: '1'
+          color: F63100
+          item:
+            host: 'TrueNAS SCALE by SNMP'
+            key: truenas.zfs.l2arc.misses
+    - uuid: 05bd0e507fc7429193904c9aaf0fdb10
+      name: 'TrueNAS: ZIL operations'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 199C0D
+          item:
+            host: 'TrueNAS SCALE by SNMP'
+            key: truenas.zfs.zil.ops1
+        - sortorder: '1'
+          color: F63100
+          item:
+            host: 'TrueNAS SCALE by SNMP'
+            key: truenas.zfs.zil.ops5
+        - sortorder: '2'
+          color: '2774A4'
+          item:
+            host: 'TrueNAS SCALE by SNMP'
+            key: truenas.zfs.zil.ops10
     - uuid: ab49c4a1d97944679031b10f7129805c
       name: 'TrueNAS: CPU jumps'
       graph_items:
